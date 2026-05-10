@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toaster";
 import { getTorrents, pauseTorrent, resumeTorrent, deleteTorrent } from "@/services/torrents";
+import { AnimeReleaseParser } from "@/lib/parser";
 
 export function DownloadsPage() {
   const queryClient = useQueryClient();
@@ -100,16 +101,34 @@ export function DownloadsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              torrents?.map((torrent) => (
-                <TableRow key={torrent.hash}>
-                  <TableCell className="font-medium">
-                    <div className="line-clamp-2 leading-tight" title={torrent.name}>
-                      {torrent.name}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">
-                    {formatBytes(torrent.size)}
-                  </TableCell>
+              torrents?.map((torrent) => {
+                const parsed = new AnimeReleaseParser(torrent.name).parse()
+                const displayTitle = parsed.animeTitle || torrent.name
+                
+                return (
+                  <TableRow key={torrent.hash}>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col space-y-1">
+                        <span className="line-clamp-2 leading-tight" title={torrent.name}>
+                          {displayTitle}
+                        </span>
+                        <div className="flex flex-wrap gap-1.5 mt-0.5">
+                          {parsed.episode !== null && (
+                            <Badge variant="secondary" className="h-4 px-1 py-0 text-[9px]">
+                              Ep {parsed.episode}
+                            </Badge>
+                          )}
+                          {parsed.resolution && (
+                            <Badge variant="outline" className="h-4 px-1 py-0 text-[9px]">
+                              {parsed.resolution}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">
+                      {formatBytes(torrent.size)}
+                    </TableCell>
                   <TableCell className="w-[20%]">
                     <div className="flex flex-col space-y-1.5">
                       <div className="flex justify-between text-xs text-muted-foreground">
@@ -161,7 +180,8 @@ export function DownloadsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+                )
+              })
             )}
           </TableBody>
         </Table>

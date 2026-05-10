@@ -9,15 +9,18 @@ import { useToast } from "@/components/ui/toaster";
 import { Skeleton } from "@/components/ui/skeleton";
 import { searchAnime } from "@/services/search";
 import { addMagnet } from "@/services/torrents";
+import { AnimeReleaseParser } from "@/lib/parser";
 
 export function SearchPage() {
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("");
   const { toast } = useToast();
 
   const { data: results, isLoading, isError, error } = useQuery({
-    queryKey: ["search", activeSearch],
-    queryFn: () => searchAnime(activeSearch),
+    queryKey: ["search", activeSearch, activeCategory],
+    queryFn: () => searchAnime(activeSearch, activeCategory),
     enabled: !!activeSearch,
   });
 
@@ -43,6 +46,7 @@ export function SearchPage() {
     e.preventDefault();
     if (query.trim()) {
       setActiveSearch(query.trim());
+      setActiveCategory(category);
     }
   };
 
@@ -53,19 +57,33 @@ export function SearchPage() {
         <p className="text-muted-foreground">Find and download anime torrents from Nyaa.</p>
       </div>
 
-      <form onSubmit={handleSearch} className="flex space-x-2">
+      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1 max-w-2xl">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for anime... (Press Enter)"
-            className="pl-9 h-12 text-lg rounded-xl bg-card border-muted-foreground/20"
+            className="pl-10 h-12 text-lg rounded-none bg-card border-muted-foreground/20"
           />
         </div>
-        <Button type="submit" className="h-12 px-6 rounded-xl">
-          Search
-        </Button>
+        <div className="flex gap-2">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="h-12 px-4 rounded-none border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer"
+          >
+            <option value="">All Categories</option>
+            <option value="1_0">Anime - All</option>
+            <option value="1_2">Anime - English</option>
+            <option value="1_3">Anime - Non-English</option>
+            <option value="1_4">Anime - Raw</option>
+            <option value="1_1">Anime - AMV</option>
+          </select>
+          <Button type="submit" className="h-12 px-8 rounded-none">
+            Search
+          </Button>
+        </div>
       </form>
 
       {isError && (
@@ -104,44 +122,68 @@ export function SearchPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              results?.map((result) => (
-                <TableRow key={result.guid} className="group transition-colors">
-                  <TableCell className="font-medium">
-                    <div className="flex flex-col space-y-1">
-                      <span className="line-clamp-2 leading-tight" title={result.title}>
-                        {result.title}
-                      </span>
-                      <span className="text-xs text-muted-foreground flex items-center space-x-2">
-                        <span>{result.publishedAt}</span>
-                        {result.seeders > 100 && (
-                          <Badge variant="success" className="h-4 text-[10px] px-1 py-0">Hot</Badge>
-                        )}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">
-                    {result.size}
-                  </TableCell>
-                  <TableCell className="text-right font-medium text-green-500">
-                    {result.seeders}
-                  </TableCell>
-                  <TableCell className="text-right text-red-400">
-                    {result.leechers}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => downloadMagnet(result.magnet || result.link)}
-                      disabled={isDownloading}
-                      title="Send to qBittorrent"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              results?.map((result) => {
+                const parsed = new AnimeReleaseParser(result.title).parse()
+                const displayTitle = parsed.animeTitle || result.title
+                
+                return (
+                  <TableRow key={result.guid} className="group transition-colors">
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col space-y-1.5">
+                        <span className="line-clamp-2 leading-tight" title={result.title}>
+                          {displayTitle}
+                        </span>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {parsed.episode !== null && (
+                            <Badge variant="default" className="h-5 px-1.5 py-0 text-[10px]">
+                              Ep {parsed.episode}
+                            </Badge>
+                          )}
+                          {parsed.releaseGroup && (
+                            <Badge variant="secondary" className="h-5 px-1.5 py-0 text-[10px]">
+                              {parsed.releaseGroup}
+                            </Badge>
+                          )}
+                          {parsed.resolution && (
+                            <Badge variant="outline" className="h-5 px-1.5 py-0 text-[10px]">
+                              {parsed.resolution}
+                            </Badge>
+                          )}
+                          {parsed.isBatch && (
+                            <Badge variant="success" className="h-5 px-1.5 py-0 text-[10px]">
+                              Batch
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground ml-1 self-center">
+                            {result.publishedAt}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">
+                      {result.size}
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-green-500">
+                      {result.seeders}
+                    </TableCell>
+                    <TableCell className="text-right text-red-400">
+                      {result.leechers}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => downloadMagnet(result.magnet || result.link)}
+                        disabled={isDownloading}
+                        title="Send to qBittorrent"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
             {!activeSearch && !isLoading && !isError && (
               <TableRow>

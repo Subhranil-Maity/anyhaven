@@ -50,7 +50,7 @@ export class NyaaRSS {
     }
 
     const url = `${this.baseUrl}/?${params.toString()}`;
-
+    console.log(url);
     const res = await fetch(url, {
       headers: {
         "User-Agent": "nyaa-rss-parser/1.0",
