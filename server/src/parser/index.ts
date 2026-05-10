@@ -1,14 +1,8 @@
-import { AnimeReleaseParser } from "./AnimeReleaseParser.js";
-import { ReleaseAnalyzer } from "./ReleaseAnalyzer.js";
-import { EpisodeDetector } from "./EpisodeDetector.js";
-import { ReleaseNormalizer } from "./ReleaseNormalizer.js";
+import { HybridParser } from "./HybridParser.js";
 import { NormalizedAnimeRelease } from "./types.js";
 
 export function parseAnimeRelease(raw: string): NormalizedAnimeRelease {
-  const parsed = AnimeReleaseParser.parse(raw);
-  const analyzed = ReleaseAnalyzer.analyze(parsed);
-  const episodes = EpisodeDetector.detect(parsed);
-  return ReleaseNormalizer.normalize(parsed, analyzed, episodes);
+  return HybridParser.parse(raw);
 }
 
 export * from "./types.js";
