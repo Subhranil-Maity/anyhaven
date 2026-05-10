@@ -1,0 +1,52 @@
+import { Moon, Sun, Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { testConnection } from "@/services/settings";
+import { useQuery } from "@tanstack/react-query";
+
+export function Header({ onMenuClick }: { onMenuClick: () => void }) {
+  const [isDark, setIsDark] = useState(true);
+
+  // We enforce dark mode by default
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDark(!isDark);
+    document.documentElement.classList.toggle("dark");
+  };
+
+  const { data: qbitStatus } = useQuery({
+    queryKey: ["qbitStatus"],
+    queryFn: testConnection,
+    refetchInterval: 10000,
+  });
+
+  return (
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>
+        <Menu className="h-5 w-5" />
+      </Button>
+      
+      <div className="flex-1" />
+      
+      <div className="flex items-center space-x-4">
+        {qbitStatus !== undefined && (
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <span className="flex h-2 w-2">
+              <span className={`animate-ping absolute inline-flex h-2 w-2 rounded-full opacity-75 ${qbitStatus.success ? 'bg-green-400' : 'bg-destructive'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${qbitStatus.success ? 'bg-green-500' : 'bg-destructive'}`}></span>
+            </span>
+            <span className="hidden sm:inline-block">
+              {qbitStatus.success ? "qBit Connected" : "qBit Error"}
+            </span>
+          </div>
+        )}
+        <Button variant="ghost" size="icon" onClick={toggleTheme}>
+          {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
+      </div>
+    </header>
+  );
+}

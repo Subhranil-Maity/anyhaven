@@ -1,0 +1,50 @@
+# Dependency directories
+node_modules/
+
+# Build output
+/dist
+/build
+/.next
+/out
+/.cache
+/.vite
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE / editor folders
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Temporary files / folders
+/tmp
+/tmp/*
+temp/
+*.temp
+
+# Test coverage
+coverage/
+
+# Yarn integrity files (if using Yarn)
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
