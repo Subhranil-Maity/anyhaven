@@ -12,6 +12,28 @@ const EPISODE_BLACKLIST = [
 ];
 
 export class FallbackSemanticParser {
+  static parseStructuredEpisodeSeason(raw: string): { 
+    episode?: ParseDecision<number>; 
+    season?: ParseDecision<number>;
+  } {
+    const match = raw.match(/S(\d{1,2})E(\d{1,3})/i);
+    if (match) {
+      return {
+        season: {
+          value: parseInt(match[1], 10),
+          confidence: 1.0,
+          source: "explicit"
+        },
+        episode: {
+          value: parseInt(match[2], 10),
+          confidence: 1.0,
+          source: "explicit"
+        }
+      };
+    }
+    return {};
+  }
+
   static parseEpisode(raw: string): { 
     episode?: ParseDecision<number>; 
     episodeStart?: ParseDecision<number>; 
@@ -131,5 +153,60 @@ export class FallbackSemanticParser {
       confidence: 0.5,
       source: "fallback"
     };
+  }
+
+  static parseTitles(raw: string): { englishTitle: string; alternativeTitle?: string } {
+    // [Group] English Title (Alt Title) - S01E01 ...
+    // First remove the group if present
+    const cleanRaw = raw.replace(/^\[.*?\]\s*/, "");
+    
+    // Look for Title (Alt Title) before the episode marker or metadata brackets
+    // Witch Hat Atelier (Tongari Boushi no Atelier) - S01E03
+    const titleSection = cleanRaw.split(/\s*-\s*S\d+|\[|\(/)[0].trim();
+    
+    // Try to find parentheses after the main title
+    const parenMatch = cleanRaw.match(/^(.*?)\s*\((.*?)\)/);
+    if (parenMatch) {
+      return {
+        englishTitle: parenMatch[1].trim(),
+        alternativeTitle: parenMatch[2].trim()
+      };
+    }
+
+    return {
+      englishTitle: titleSection
+    };
+  }
+
+  static parseBracketMetadata(raw: string) {
+    const results: {
+      resolution?: string;
+      codec?: string;
+      audio?: "dual" | "single";
+      subtitles?: "multi" | "single";
+    } = {};
+
+    const bracketMatches = raw.matchAll(/\[(.*?)\]/g);
+    for (const match of bracketMatches) {
+      const tag = match[1].toLowerCase();
+      if (tag.includes("1080p") || tag.includes("720p") || tag.includes("2160p") || tag.includes("4k")) {
+        results.resolution = match[1];
+      } else if (tag.includes("hevc") || tag.includes("x265") || tag.includes("x264") || tag.includes("av1")) {
+        results.codec = match[1];
+      } else if (tag.includes("dual-audio") || tag.includes("dual audio")) {
+        results.audio = "dual";
+      } else if (tag.includes("multi-subs") || tag.includes("multi-sub") || tag.includes("multi subs")) {
+        results.subtitles = "multi";
+      }
+    }
+
+    return results;
+  }
+
+  static parseReleaseType(raw: string): "weekly" | "batch" | "unknown" {
+    const lower = raw.toLowerCase();
+    if (lower.includes("(weekly)")) return "weekly";
+    if (lower.includes("batch") || lower.includes("complete") || lower.includes("collection")) return "batch";
+    return "unknown";
   }
 }

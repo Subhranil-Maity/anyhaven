@@ -20,7 +20,22 @@ export class HybridParser {
     // 3. Fallback Semantic Parser (Always run for baseline)
     const anitomyParsed = anitomy.parse(raw) as AnitomyResult;
     anitomyParsed.raw = raw;
+
+    // Structured TV format (S01E03) - Highest Priority
+    const structuredResult = FallbackSemanticParser.parseStructuredEpisodeSeason(raw);
     
+    // Fallback parsing
+    const fallbackEp = FallbackSemanticParser.parseEpisode(raw);
+    const fallbackSeason = FallbackSemanticParser.parseSeason(raw, anitomyParsed);
+    const fallbackBatch = FallbackSemanticParser.parseBatch(raw);
+
+    // Titles
+    const titles = FallbackSemanticParser.parseTitles(raw);
+
+    // Metadata
+    const metadata = FallbackSemanticParser.parseBracketMetadata(raw);
+    const releaseType = FallbackSemanticParser.parseReleaseType(raw);
+
     // Recovery layers to ensure AnitomyResult has needed fields
     if (!anitomyParsed.release) anitomyParsed.release = {};
     if (!anitomyParsed.file) anitomyParsed.file = {};
@@ -28,15 +43,11 @@ export class HybridParser {
         anitomyParsed.release.group = groupName;
     }
 
-    const fallbackEp = FallbackSemanticParser.parseEpisode(raw);
-    const fallbackSeason = FallbackSemanticParser.parseSeason(raw, anitomyParsed);
-    const fallbackBatch = FallbackSemanticParser.parseBatch(raw);
-
     // 4. Conflict Resolution System
-    const finalEpisode = this.resolveConflict(groupResult.episode, fallbackEp.episode);
+    const finalEpisode = structuredResult.episode || this.resolveConflict(groupResult.episode, fallbackEp.episode);
     const finalEpisodeStart = this.resolveConflict(groupResult.episodeStart, fallbackEp.episodeStart);
     const finalEpisodeEnd = this.resolveConflict(groupResult.episodeEnd, fallbackEp.episodeEnd);
-    const finalSeason = fallbackSeason; // No group currently dictates season rules in our registry
+    const finalSeason = structuredResult.season || fallbackSeason; 
     const finalBatch = this.resolveConflict(groupResult.isBatch, fallbackBatch);
 
     // 5. Old flags (keep the old ReleaseAnalyzer flags for backwards compatibility)
@@ -54,13 +65,28 @@ export class HybridParser {
     // Override with strict hybrid parser decisions
     normalized.isBatch = finalBatch?.value || false;
     normalized.season = finalSeason?.value ?? undefined;
+
+    // Apply new structured fields
+    normalized.englishTitle = titles.englishTitle;
+    normalized.alternativeTitle = titles.alternativeTitle;
+    if (titles.alternativeTitle && !normalized.alternativeTitles.includes(titles.alternativeTitle)) {
+      normalized.alternativeTitles.push(titles.alternativeTitle);
+    }
+
+    if (metadata.resolution) normalized.resolution = metadata.resolution;
+    if (metadata.codec) normalized.codec = metadata.codec;
+    if (metadata.audio === "dual") normalized.isDualAudio = true;
+    if (metadata.subtitles === "multi") normalized.isMultiSub = true;
+    normalized.releaseType = releaseType;
+
     normalized.confidence = Math.min(
        100,
        Math.max(
           (finalEpisode?.confidence || 0.5) * 100,
-          (finalBatch?.confidence || 0.5) * 100
+          (finalBatch?.confidence || 0.5) * 100,
+          structuredResult.episode ? 100 : 0
        )
-    );
+    ) / 100;
 
     return normalized;
   }

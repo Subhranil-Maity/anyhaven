@@ -126,11 +126,19 @@ export const GroupStrategies: Record<string, GroupStrategy> = {
         };
       }
 
-      result.isBatch = {
-        value: true,
-        confidence: 1.0, // Judas is almost always batch oriented
-        source: "group"
-      };
+      if (raw.toLowerCase().includes("batch") || raw.toLowerCase().includes("complete") || (raw.toLowerCase().includes("01-") && !raw.match(/S\d+E\d+/i))) {
+        result.isBatch = {
+          value: true,
+          confidence: 1.0,
+          source: "group"
+        };
+      } else {
+        result.isBatch = {
+          value: false,
+          confidence: 0.8,
+          source: "group"
+        };
+      }
 
       return result;
     }

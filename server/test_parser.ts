@@ -6,7 +6,8 @@ const testTitles = [
   "[SubsPlease] Frieren - 12 (1080p) [ABCD1234]",
   "[Judas] Monogatari Series Batch 01-100 [HEVC]",
   "[Erai-raws] Oshi no Ko - 01v2 [1080p]",
-  "[SomeGroup] Movie Title (BD 1080p x265 Dual Audio)"
+  "[SomeGroup] Movie Title (BD 1080p x265 Dual Audio)",
+  "[Judas] Witch Hat Atelier (Tongari Boushi no Atelier) - S01E03 [1080p][HEVC x265 10bit][Dual-Audio][Multi-Subs] (Weekly)"
 ];
 
 for (const t of testTitles) {

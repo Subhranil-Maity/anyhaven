@@ -1,6 +1,8 @@
 export type NormalizedAnimeRelease = {
   raw: string;
   animeTitle: string;
+  englishTitle?: string;
+  alternativeTitle?: string;
   alternativeTitles: string[];
 
   season?: number;
@@ -27,6 +29,7 @@ export type NormalizedAnimeRelease = {
   isDualAudio: boolean;
   isMultiSub: boolean;
   isRemux: boolean;
+  releaseType?: "weekly" | "batch" | "unknown";
 
   qualityScore: number;
   confidence: number;
