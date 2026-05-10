@@ -22,6 +22,7 @@ const handleFineSearch = async ({ query, body }: any) => {
       dualAudio: input.dualAudio === "true" || input.dualAudio === true,
       minimumSeeders: input.minimumSeeders ? parseInt(input.minimumSeeders) : undefined,
       allowMultiSub: input.allowMultiSub === "true" || input.allowMultiSub === true,
+      category: input.category,
     };
 
     if (input.preferredGroups) {

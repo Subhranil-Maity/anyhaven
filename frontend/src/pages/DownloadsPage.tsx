@@ -84,6 +84,7 @@ export function DownloadsPage() {
             const parsed = new AnimeReleaseParser(torrent.name).parse()
             const displayTitle = parsed.animeTitle || torrent.name
             const progressPercent = (torrent.progress * 100).toFixed(1)
+            const isPaused = torrent.state.includes("paused") || torrent.state.includes("stopped")
             
             return (
               <div 
@@ -94,7 +95,7 @@ export function DownloadsPage() {
                 {/* Left Color Bar Accent based on state */}
                 <div className={`absolute left-0 top-0 bottom-0 w-1 opacity-80 transition-colors ${
                   torrent.state.includes("downloading") ? "bg-primary shadow-glow-cyan" :
-                  torrent.state.includes("paused") ? "bg-muted-foreground" :
+                  isPaused ? "bg-muted-foreground" :
                   torrent.state.includes("error") ? "bg-destructive shadow-glow-magenta" :
                   torrent.state.includes("up") ? "bg-green-400" : "bg-secondary"
                 }`} />
@@ -108,7 +109,7 @@ export function DownloadsPage() {
                       <div className="flex flex-wrap gap-2 mt-2">
                         <Badge variant={
                           torrent.state.includes("downloading") ? "default" :
-                          torrent.state.includes("paused") ? "outline" :
+                          isPaused ? "outline" :
                           torrent.state.includes("error") ? "destructive" :
                           torrent.state.includes("up") ? "success" : "secondary"
                         } className="capitalize py-0.5 shadow-none text-xs">
@@ -137,7 +138,7 @@ export function DownloadsPage() {
                         <span className="text-primary tracking-widest">{formatETA(torrent.eta)} REMAINING</span>
                       )}
                     </div>
-                    <Progress value={torrent.progress * 100} className={`h-2 ${torrent.state.includes('paused') ? 'opacity-50' : ''}`} />
+                    <Progress value={torrent.progress * 100} className={`h-2 ${isPaused ? 'opacity-50' : ''}`} />
                   </div>
                 </div>
 
@@ -155,7 +156,7 @@ export function DownloadsPage() {
                   </div>
                   
                   <div className="flex gap-2">
-                    {torrent.state.includes("paused") ? (
+                    {isPaused ? (
                       <Button variant="secondary" size="icon" className="h-10 w-10 rounded-xl" onClick={() => resumeMutation.mutate(torrent.hash)}>
                         <Play className="h-4 w-4" />
                       </Button>

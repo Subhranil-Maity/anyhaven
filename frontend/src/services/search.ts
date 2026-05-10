@@ -28,6 +28,7 @@ export type FineSearchQuery = {
   excludeGroups?: string[];
   minimumSeeders?: number;
   allowMultiSub?: boolean;
+  category?: string;
 };
 
 export type FineSearchResult = {

@@ -124,6 +124,7 @@ export function FineSearchPage() {
               type="number"
               value={query.season || ""}
               onChange={(e) => updateQuery("season", e.target.value ? parseInt(e.target.value) : undefined)}
+              onWheel={(e) => e.currentTarget.blur()}
               placeholder="S#"
               className="h-12 bg-black/40 border-white/10 font-mono"
             />
@@ -134,6 +135,7 @@ export function FineSearchPage() {
               type="number"
               value={query.episode || ""}
               onChange={(e) => updateQuery("episode", e.target.value ? parseInt(e.target.value) : undefined)}
+              onWheel={(e) => e.currentTarget.blur()}
               placeholder="Ep#"
               className="h-12 bg-black/40 border-white/10 font-mono"
             />
@@ -144,6 +146,7 @@ export function FineSearchPage() {
               type="number"
               value={query.episodeStart || ""}
               onChange={(e) => updateQuery("episodeStart", e.target.value ? parseInt(e.target.value) : undefined)}
+              onWheel={(e) => e.currentTarget.blur()}
               placeholder="Start Ep#"
               className="h-12 bg-black/40 border-white/10 font-mono"
             />
@@ -154,13 +157,28 @@ export function FineSearchPage() {
               type="number"
               value={query.episodeEnd || ""}
               onChange={(e) => updateQuery("episodeEnd", e.target.value ? parseInt(e.target.value) : undefined)}
+              onWheel={(e) => e.currentTarget.blur()}
               placeholder="End Ep#"
               className="h-12 bg-black/40 border-white/10 font-mono"
             />
           </div>
 
           {/* Preferences */}
-          <div className="md:col-span-4">
+          <div className="md:col-span-3">
+            <label className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Category</label>
+            <select
+              value={query.category || ""}
+              onChange={(e) => updateQuery("category", e.target.value || undefined)}
+              className="w-full h-12 px-4 rounded-xl border border-white/10 bg-black/40 text-sm font-mono focus-visible:outline-none focus-visible:border-secondary transition-colors cursor-pointer"
+            >
+              <option value="">English-translated (Default)</option>
+              <option value="1_3">Non-English-translated</option>
+              <option value="1_4">Raw</option>
+              <option value="4_2">Live Action - English</option>
+              <option value="4_4">Live Action - Raw</option>
+            </select>
+          </div>
+          <div className="md:col-span-3">
             <label className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Resolution</label>
             <select
               value={query.preferredResolution || ""}
@@ -173,7 +191,7 @@ export function FineSearchPage() {
               <option value="720p">720p</option>
             </select>
           </div>
-          <div className="md:col-span-4">
+          <div className="md:col-span-3">
             <label className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Source</label>
             <select
               value={query.preferredSource || ""}
@@ -186,7 +204,7 @@ export function FineSearchPage() {
               <option value="TV">TV</option>
             </select>
           </div>
-          <div className="md:col-span-4">
+          <div className="md:col-span-3">
             <label className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Codec</label>
             <select
               value={query.preferredCodec || ""}
@@ -256,6 +274,7 @@ export function FineSearchPage() {
                 type="number"
                 value={query.minimumSeeders || ""}
                 onChange={(e) => updateQuery("minimumSeeders", e.target.value ? parseInt(e.target.value) : undefined)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="0"
                 className="w-20 h-10 bg-black/40 border-white/10 text-center font-mono"
               />

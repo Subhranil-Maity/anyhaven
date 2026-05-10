@@ -138,12 +138,22 @@ export async function addMagnet(magnet: string): Promise<void> {
 
 export async function pauseTorrent(hash: string): Promise<void> {
   try {
-    const res = await request("/api/v2/torrents/pause", {
+    let res = await request("/api/v2/torrents/stop", {
       method: "POST",
       body: new URLSearchParams({
         hashes: hash,
       }),
     });
+
+    if (res.status === 404) {
+      // Fallback for older qBittorrent versions (< v5.0.0)
+      res = await request("/api/v2/torrents/pause", {
+        method: "POST",
+        body: new URLSearchParams({
+          hashes: hash,
+        }),
+      });
+    }
 
     if (!res.ok) throw new Error(`Failed to pause torrent: ${res.status}`);
   } catch (error) {
@@ -153,12 +163,22 @@ export async function pauseTorrent(hash: string): Promise<void> {
 
 export async function resumeTorrent(hash: string): Promise<void> {
   try {
-    const res = await request("/api/v2/torrents/resume", {
+    let res = await request("/api/v2/torrents/start", {
       method: "POST",
       body: new URLSearchParams({
         hashes: hash,
       }),
     });
+
+    if (res.status === 404) {
+      // Fallback for older qBittorrent versions (< v5.0.0)
+      res = await request("/api/v2/torrents/resume", {
+        method: "POST",
+        body: new URLSearchParams({
+          hashes: hash,
+        }),
+      });
+    }
 
     if (!res.ok) throw new Error(`Failed to resume torrent: ${res.status}`);
   } catch (error) {

@@ -13,7 +13,8 @@ export class FineSearchEngine {
 
     for (const q of executedQueries) {
       try {
-        const results = await searchAnime(q, "1_2", "0", undefined, 50); // Anime - English-translated category
+        const category = query.category || "1_2"; // Anime - English-translated category as default
+        const results = await searchAnime(q, category, "0", undefined, 50);
         for (const res of results) {
           const normalized = parseAnimeRelease(res.title);
           
