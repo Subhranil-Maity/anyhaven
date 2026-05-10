@@ -60,6 +60,7 @@ export function FineSearchPage() {
   });
   
   const [activeQuery, setActiveQuery] = useState<FineSearchQuery | null>(null);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const { toast } = useToast();
 
   const { data: results, isLoading, isError, error } = useQuery({
@@ -82,9 +83,16 @@ export function FineSearchPage() {
     e.preventDefault();
     if (query.animeTitle.trim()) {
       setActiveQuery({ ...query });
+      setSelectedGroups([]); // Reset filters on new search
     } else {
       toast({ title: "Validation Error", description: "Anime Title is required.", variant: "destructive" });
     }
+  };
+
+  const toggleGroup = (group: string) => {
+    setSelectedGroups((prev) => 
+      prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
+    );
   };
 
   const updateQuery = (key: keyof FineSearchQuery, value: any) => {
@@ -314,8 +322,19 @@ export function FineSearchPage() {
 
         {results?.groups && results.groups.length > 0 && (() => {
           const allTorrents = results.groups.flatMap(g => g.torrents);
-          const batchTorrents = allTorrents.filter(t => t.normalized.isBatch);
-          const episodicTorrents = allTorrents.filter(t => !t.normalized.isBatch);
+          
+          const availableGroups = Array.from(
+            new Set(allTorrents.map(t => t.normalized.releaseGroup).filter(Boolean) as string[])
+          ).sort();
+
+          const filteredTorrents = allTorrents.filter(t => {
+            if (selectedGroups.length === 0) return true;
+            const g = t.normalized.releaseGroup;
+            return g && selectedGroups.includes(g);
+          });
+
+          const batchTorrents = filteredTorrents.filter(t => t.normalized.isBatch);
+          const episodicTorrents = filteredTorrents.filter(t => !t.normalized.isBatch);
           
           const epsMap = new Map<number, typeof episodicTorrents>();
           const unknownEpTorrents: typeof episodicTorrents = [];
@@ -333,12 +352,39 @@ export function FineSearchPage() {
           const sortedEpisodes = Array.from(epsMap.keys()).sort((a, b) => b - a);
 
           return (
-            <div className="space-y-12">
-              <div className="flex justify-between items-end border-b border-white/10 pb-2">
+            <div className="space-y-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-white/10 pb-4 gap-4">
                 <h2 className="font-syne text-2xl font-bold text-white">Processed Aggregations</h2>
-                <span className="font-mono text-sm text-muted-foreground">{allTorrents.length} Files</span>
+                <span className="font-mono text-sm text-muted-foreground">{filteredTorrents.length} Files Displayed</span>
               </div>
+
+              {availableGroups.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 glass-panel p-4 rounded-xl border border-white/5">
+                  <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest mr-2">Filter Groups:</span>
+                  {availableGroups.map((g) => (
+                    <Badge 
+                      key={g} 
+                      variant={selectedGroups.includes(g) ? "default" : "outline"} 
+                      className="cursor-pointer hover:bg-primary hover:text-black transition-colors"
+                      onClick={() => toggleGroup(g)}
+                    >
+                      {g}
+                    </Badge>
+                  ))}
+                  {selectedGroups.length > 0 && (
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs font-mono text-muted-foreground hover:text-white" onClick={() => setSelectedGroups([])}>
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+              )}
               
+              {filteredTorrents.length === 0 && (
+                <div className="h-32 flex flex-col items-center justify-center text-muted-foreground glass-panel rounded-2xl border-dashed border-white/20">
+                  <p className="font-mono text-sm uppercase tracking-widest text-primary/50">ALL FILES FILTERED OUT</p>
+                </div>
+              )}
+
               {batchTorrents.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="font-syne font-black text-3xl text-secondary shadow-glow-magenta inline-block px-2">BATCH RELEASES</h3>

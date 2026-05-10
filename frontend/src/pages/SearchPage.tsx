@@ -16,6 +16,7 @@ export function SearchPage() {
   const [category, setCategory] = useState("1_2"); // Default to English translated
   const [activeSearch, setActiveSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const { toast } = useToast();
 
   const { data: results, isLoading, isError, error, refetch } = useQuery({
@@ -60,9 +61,30 @@ export function SearchPage() {
       } else {
         setActiveSearch(finalQuery);
         setActiveCategory(category);
+        setSelectedGroups([]); // Reset filters on new search
       }
     }
   };
+
+  const toggleGroup = (group: string) => {
+    setSelectedGroups((prev) => 
+      prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
+    );
+  };
+
+  // Extract available groups from results
+  const availableGroups = Array.from(
+    new Set(
+      results?.map(r => new AnimeReleaseParser(r.title).parse().releaseGroup).filter(Boolean) as string[]
+    )
+  ).sort();
+
+  // Filter results based on selected groups
+  const filteredResults = results?.filter(r => {
+    if (selectedGroups.length === 0) return true;
+    const g = new AnimeReleaseParser(r.title).parse().releaseGroup;
+    return g && selectedGroups.includes(g);
+  });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -134,14 +156,35 @@ export function SearchPage() {
               <div key={i} className="h-32 rounded-2xl glass-panel animate-pulse bg-white/5 border-white/10" />
             ))}
           </div>
-        ) : results?.length === 0 ? (
+        ) : filteredResults?.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-muted-foreground glass-panel rounded-2xl border-dashed border-white/20">
             <p className="font-mono text-lg uppercase tracking-widest text-primary/50">NO DATA FOUND</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {results?.map((result, i) => {
-              const parsed = new AnimeReleaseParser(result.title).parse()
+          <>
+            {availableGroups.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-6 glass-panel p-4 rounded-xl border border-white/5">
+                <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest mr-2">Filter Groups:</span>
+                {availableGroups.map((g) => (
+                  <Badge 
+                    key={g} 
+                    variant={selectedGroups.includes(g) ? "default" : "outline"} 
+                    className="cursor-pointer hover:bg-primary hover:text-black transition-colors"
+                    onClick={() => toggleGroup(g)}
+                  >
+                    {g}
+                  </Badge>
+                ))}
+                {selectedGroups.length > 0 && (
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs font-mono text-muted-foreground hover:text-white" onClick={() => setSelectedGroups([])}>
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            )}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {filteredResults?.map((result, i) => {
+                const parsed = new AnimeReleaseParser(result.title).parse()
               const displayTitle = parsed.animeTitle || result.title
               
               return (
@@ -207,7 +250,8 @@ export function SearchPage() {
                 </div>
               )
             })}
-          </div>
+            </div>
+          </>
         )}
         
         {!activeSearch && !isLoading && !isError && (
