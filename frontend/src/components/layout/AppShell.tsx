@@ -17,7 +17,7 @@ export function AppShell() {
   const location = useLocation();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background bg-noise">
       <Header onMenuClick={() => setMobileMenuOpen(true)} />
       
       <div className="flex flex-1 overflow-hidden">

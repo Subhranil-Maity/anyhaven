@@ -24,7 +24,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   });
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b border-primary/20 bg-background/40 px-6 glass-panel supports-[backdrop-filter]:bg-background/40">
       <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>
         <Menu className="h-5 w-5" />
       </Button>
@@ -35,11 +35,11 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
         {qbitStatus !== undefined && (
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <span className="flex h-2 w-2">
-              <span className={`animate-ping absolute inline-flex h-2 w-2 rounded-full opacity-75 ${qbitStatus.success ? 'bg-green-400' : 'bg-destructive'}`}></span>
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${qbitStatus.success ? 'bg-green-500' : 'bg-destructive'}`}></span>
+              <span className={`animate-ping absolute inline-flex h-2 w-2 rounded-full opacity-75 ${qbitStatus.success ? 'bg-primary shadow-glow-cyan' : 'bg-destructive shadow-glow-magenta'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${qbitStatus.success ? 'bg-primary' : 'bg-destructive'}`}></span>
             </span>
-            <span className="hidden sm:inline-block">
-              {qbitStatus.success ? "qBit Connected" : "qBit Error"}
+            <span className="hidden sm:inline-block font-mono tracking-tight uppercase">
+              {qbitStatus.success ? "qBit Linked" : "qBit Offline"}
             </span>
           </div>
         )}

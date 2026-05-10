@@ -1,5 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap');
 @import "tailwindcss";
-
 @theme {
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -33,75 +33,113 @@
   --radius-sm: calc(var(--radius) - 4px);
 }
 
-@layer base {
-  :root {
-    /* Catppuccin Mocha */
-    --background: 240 21% 15%; /* Base */
-    --foreground: 226 64% 88%; /* Text */
-
-    --card: 240 21% 12%; /* Mantle */
-    --card-foreground: 226 64% 88%; /* Text */
-
-    --popover: 240 21% 12%; /* Mantle */
-    --popover-foreground: 226 64% 88%; /* Text */
-
-    --primary: 267 84% 81%; /* Mauve */
-    --primary-foreground: 240 23% 9%; /* Crust */
-
-    --secondary: 237 16% 23%; /* Surface0 */
-    --secondary-foreground: 226 64% 88%; /* Text */
-
-    --muted: 237 16% 23%; /* Surface0 */
-    --muted-foreground: 228 24% 72%; /* Subtext0 */
-
-    --accent: 234 13% 31%; /* Surface1 */
-    --accent-foreground: 226 64% 88%; /* Text */
-
-    --destructive: 343 81% 75%; /* Red */
-    --destructive-foreground: 240 23% 9%; /* Crust */
-
-    --border: 234 13% 31%; /* Surface1 */
-    --input: 234 13% 31%; /* Surface1 */
-    --ring: 267 84% 81%; /* Mauve */
-
-    --radius: 0px; /* Flat UI */
+  @layer base {
+    :root {
+      /* Neo-Tokyo Editorial */
+      --background: 240 14% 3%; /* #060608 */
+      --foreground: 0 0% 100%; /* #FFFFFF */
+  
+      --card: 240 16% 6%; /* #0D0D12 */
+      --card-foreground: 0 0% 100%;
+  
+      --popover: 240 16% 6%;
+      --popover-foreground: 0 0% 100%;
+  
+      --primary: 184 100% 50%; /* #00F0FF Cyan Neon */
+      --primary-foreground: 240 14% 3%;
+  
+      --secondary: 346 100% 50%; /* #FF003C Magenta Neon */
+      --secondary-foreground: 0 0% 100%;
+  
+      --muted: 240 16% 12%; /* #1A1A24 */
+      --muted-foreground: 240 10% 65%; /* #A6A6AC */
+  
+      --accent: 346 100% 50%;
+      --accent-foreground: 0 0% 100%;
+  
+      --destructive: 0 100% 50%; /* Pure Red */
+      --destructive-foreground: 0 0% 100%;
+  
+      --border: 240 16% 15%;
+      --input: 240 16% 12%;
+      --ring: 184 100% 50%;
+  
+      --radius: 0.75rem; /* 12px */
+    }
+  
+    .dark {
+      --background: 240 14% 3%;
+      --foreground: 0 0% 100%;
+      --card: 240 16% 6%;
+      --card-foreground: 0 0% 100%;
+      --popover: 240 16% 6%;
+      --popover-foreground: 0 0% 100%;
+      --primary: 184 100% 50%;
+      --primary-foreground: 240 14% 3%;
+      --secondary: 346 100% 50%;
+      --secondary-foreground: 0 0% 100%;
+      --muted: 240 16% 12%;
+      --muted-foreground: 240 10% 65%;
+      --accent: 346 100% 50%;
+      --accent-foreground: 0 0% 100%;
+      --destructive: 0 100% 50%;
+      --destructive-foreground: 0 0% 100%;
+      --border: 240 16% 15%;
+      --input: 240 16% 12%;
+      --ring: 184 100% 50%;
+    }
+  
+    * {
+      @apply border-border;
+    }
+    body {
+      @apply bg-background text-foreground;
+      font-family: 'Manrope', sans-serif;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+    }
   }
-
-  /* Force dark mode to the same Catppuccin Mocha theme */
-  .dark {
-    --background: 240 21% 15%;
-    --foreground: 226 64% 88%;
-
-    --card: 240 21% 12%;
-    --card-foreground: 226 64% 88%;
-
-    --popover: 240 21% 12%;
-    --popover-foreground: 226 64% 88%;
-
-    --primary: 267 84% 81%;
-    --primary-foreground: 240 23% 9%;
-
-    --secondary: 237 16% 23%;
-    --secondary-foreground: 226 64% 88%;
-
-    --muted: 237 16% 23%;
-    --muted-foreground: 228 24% 72%;
-
-    --accent: 234 13% 31%;
-    --accent-foreground: 226 64% 88%;
-
-    --destructive: 343 81% 75%;
-    --destructive-foreground: 240 23% 9%;
-
-    --border: 234 13% 31%;
-    --input: 234 13% 31%;
-    --ring: 267 84% 81%;
+  
+  @layer utilities {
+    .font-syne {
+      font-family: 'Syne', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .text-glow-cyan {
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.7), 0 0 20px rgba(0, 240, 255, 0.4);
+    }
+    .text-glow-magenta {
+      text-shadow: 0 0 10px rgba(255, 0, 60, 0.7), 0 0 20px rgba(255, 0, 60, 0.4);
+    }
+    .shadow-glow-cyan {
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), 0 0 30px rgba(0, 240, 255, 0.1);
+    }
+    .shadow-glow-magenta {
+      box-shadow: 0 0 15px rgba(255, 0, 60, 0.3), 0 0 30px rgba(255, 0, 60, 0.1);
+    }
+    .glass-panel {
+      background: rgba(13, 13, 18, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
   }
-
-  * {
-    @apply border-border;
+  
+  /* Noise Texture Overlay */
+  .bg-noise {
+    position: relative;
   }
-  body {
-    @apply bg-background text-foreground font-sans;
+  .bg-noise::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
   }
-}

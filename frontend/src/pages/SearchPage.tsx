@@ -3,22 +3,22 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Search, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toaster";
-import { Skeleton } from "@/components/ui/skeleton";
 import { searchAnime } from "@/services/search";
 import { addMagnet } from "@/services/torrents";
 import { AnimeReleaseParser } from "@/lib/parser";
 
 export function SearchPage() {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("");
+  const [episode, setEpisode] = useState("");
+  const [quality, setQuality] = useState("");
+  const [category, setCategory] = useState("1_2"); // Default to English translated
   const [activeSearch, setActiveSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
   const { toast } = useToast();
 
-  const { data: results, isLoading, isError, error } = useQuery({
+  const { data: results, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["search", activeSearch, activeCategory],
     queryFn: () => searchAnime(activeSearch, activeCategory),
     enabled: !!activeSearch,
@@ -45,33 +45,67 @@ export function SearchPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      setActiveSearch(query.trim());
-      setActiveCategory(category);
+      let finalQuery = query.trim();
+      
+      if (episode.trim()) {
+        finalQuery = `"${finalQuery} - ${episode.trim()}"`;
+      }
+      
+      if (quality) {
+        finalQuery = `${finalQuery} ${quality}`;
+      }
+
+      if (finalQuery === activeSearch && category === activeCategory) {
+        refetch();
+      } else {
+        setActiveSearch(finalQuery);
+        setActiveCategory(category);
+      }
     }
   };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight">Search Anime</h1>
-        <p className="text-muted-foreground">Find and download anime torrents from Nyaa.</p>
+      <div className="flex flex-col space-y-2 mb-8">
+        <h1 className="text-5xl md:text-7xl font-syne font-black tracking-tighter text-glow-cyan">SEARCH</h1>
+        <p className="text-muted-foreground font-mono uppercase tracking-widest text-sm">Terminal // Nyaa Index</p>
       </div>
 
-      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1 max-w-2xl">
-          <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+      <form onSubmit={handleSearch} className="flex flex-col space-y-4 p-6 glass-panel rounded-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        <div className="flex flex-col sm:flex-row gap-4 relative z-10">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Query Title..."
+              className="pl-12 h-14 text-xl bg-black/40 border-primary/30 focus-visible:border-primary placeholder:text-muted-foreground/50 font-syne font-bold"
+            />
+          </div>
           <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for anime... (Press Enter)"
-            className="pl-10 h-12 text-lg rounded-none bg-card border-muted-foreground/20"
+            value={episode}
+            onChange={(e) => setEpisode(e.target.value)}
+            placeholder="Ep (01 or 1-12)"
+            className="w-full sm:w-[160px] h-14 text-xl bg-black/40 border-primary/30 text-center font-mono placeholder:text-muted-foreground/50"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-4 relative z-10">
+          <select
+            value={quality}
+            onChange={(e) => setQuality(e.target.value)}
+            className="h-14 px-4 rounded-xl border border-primary/30 bg-black/40 text-sm font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:shadow-glow-cyan transition-colors hover:bg-primary/10 cursor-pointer flex-1"
+          >
+            <option value="">Any Quality</option>
+            <option value="2160p">2160p (4K)</option>
+            <option value="1080p">1080p</option>
+            <option value="720p">720p</option>
+            <option value="480p">480p</option>
+          </select>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="h-12 px-4 rounded-none border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer"
+            className="h-14 px-4 rounded-xl border border-primary/30 bg-black/40 text-sm font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:shadow-glow-cyan transition-colors hover:bg-primary/10 cursor-pointer flex-1"
           >
             <option value="">All Categories</option>
             <option value="1_0">Anime - All</option>
@@ -80,8 +114,8 @@ export function SearchPage() {
             <option value="1_4">Anime - Raw</option>
             <option value="1_1">Anime - AMV</option>
           </select>
-          <Button type="submit" className="h-12 px-8 rounded-none">
-            Search
+          <Button type="submit" className="h-14 px-10 text-lg uppercase tracking-widest sm:flex-none">
+            Execute
           </Button>
         </div>
       </form>
@@ -93,110 +127,98 @@ export function SearchPage() {
         </div>
       )}
 
-      <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="w-[50%]">Name</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead className="text-right">Seeders</TableHead>
-              <TableHead className="text-right">Leechers</TableHead>
-              <TableHead className="w-[100px] text-center">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-6 w-3/4" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-12 ml-auto" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-12 ml-auto" /></TableCell>
-                  <TableCell><Skeleton className="h-8 w-8 mx-auto rounded-md" /></TableCell>
-                </TableRow>
-              ))
-            ) : results?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                  No results found. Try a different search term.
-                </TableCell>
-              </TableRow>
-            ) : (
-              results?.map((result) => {
-                const parsed = new AnimeReleaseParser(result.title).parse()
-                const displayTitle = parsed.animeTitle || result.title
-                
-                return (
-                  <TableRow key={result.guid} className="group transition-colors">
-                    <TableCell className="font-medium">
-                      <div className="flex flex-col space-y-1.5">
-                        <span className="line-clamp-2 leading-tight" title={result.title}>
-                          {displayTitle}
-                        </span>
-                        <div className="flex flex-wrap gap-1.5 mt-1">
-                          {parsed.episode !== null && (
-                            <Badge variant="default" className="h-5 px-1.5 py-0 text-[10px]">
-                              Ep {parsed.episode}
-                            </Badge>
-                          )}
-                          {parsed.releaseGroup && (
-                            <Badge variant="secondary" className="h-5 px-1.5 py-0 text-[10px]">
-                              {parsed.releaseGroup}
-                            </Badge>
-                          )}
-                          {parsed.resolution && (
-                            <Badge variant="outline" className="h-5 px-1.5 py-0 text-[10px]">
-                              {parsed.resolution}
-                            </Badge>
-                          )}
-                          {parsed.isBatch && (
-                            <Badge variant="success" className="h-5 px-1.5 py-0 text-[10px]">
-                              Batch
-                            </Badge>
-                          )}
-                          <span className="text-xs text-muted-foreground ml-1 self-center">
-                            {result.publishedAt}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap">
-                      {result.size}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-green-500">
-                      {result.seeders}
-                    </TableCell>
-                    <TableCell className="text-right text-red-400">
-                      {result.leechers}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => downloadMagnet(result.magnet || result.link)}
-                        disabled={isDownloading}
-                        title="Send to qBittorrent"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-            {!activeSearch && !isLoading && !isError && (
-              <TableRow>
-                <TableCell colSpan={5} className="h-64 text-center text-muted-foreground">
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <Search className="h-10 w-10 opacity-20" />
-                    <p>Enter a search query to find anime torrents.</p>
+      <div className="mt-8">
+        {isLoading ? (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-32 rounded-2xl glass-panel animate-pulse bg-white/5 border-white/10" />
+            ))}
+          </div>
+        ) : results?.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-muted-foreground glass-panel rounded-2xl border-dashed border-white/20">
+            <p className="font-mono text-lg uppercase tracking-widest text-primary/50">NO DATA FOUND</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {results?.map((result, i) => {
+              const parsed = new AnimeReleaseParser(result.title).parse()
+              const displayTitle = parsed.animeTitle || result.title
+              
+              return (
+                <div 
+                  key={result.guid} 
+                  className="group relative flex flex-col sm:flex-row glass-panel rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-glow-cyan hover:border-primary/50 hover:-translate-y-1"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  {/* Left Color Bar Accent */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-secondary opacity-50 group-hover:opacity-100" />
+                  
+                  <div className="flex-1 p-6 flex flex-col justify-between space-y-4">
+                    <div>
+                      <h3 className="font-syne font-bold text-xl md:text-2xl leading-tight line-clamp-2 text-white group-hover:text-primary transition-colors" title={result.title}>
+                        {displayTitle}
+                      </h3>
+                      <p className="text-xs font-mono text-muted-foreground mt-2 line-clamp-1" title={result.title}>{result.title}</p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {parsed.episode !== null && (
+                        <Badge variant="default" className="text-sm px-2 py-0.5">
+                          EP {parsed.episode}
+                        </Badge>
+                      )}
+                      {parsed.releaseGroup && (
+                        <Badge variant="secondary" className="px-2 py-0.5">
+                          {parsed.releaseGroup}
+                        </Badge>
+                      )}
+                      {parsed.resolution && (
+                        <Badge variant="outline" className="border-primary/30 text-primary px-2 py-0.5 bg-primary/5">
+                          {parsed.resolution}
+                        </Badge>
+                      )}
+                      {parsed.isBatch && (
+                        <Badge variant="success" className="px-2 py-0.5">
+                          BATCH
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+
+                  <div className="bg-black/40 sm:w-48 p-6 flex flex-row sm:flex-col justify-between items-center sm:items-end border-t sm:border-t-0 sm:border-l border-white/10">
+                    <div className="flex flex-col items-start sm:items-end font-mono">
+                      <span className="text-xl font-bold text-white">{result.size}</span>
+                      <div className="flex gap-3 text-xs mt-1 font-bold">
+                        <span className="text-green-400">S:{result.seeders}</span>
+                        <span className="text-red-400">L:{result.leechers}</span>
+                      </div>
+                    </div>
+                    
+                    <Button
+                      size="icon"
+                      className="h-12 w-12 rounded-xl"
+                      onClick={() => downloadMagnet(result.magnet || result.link)}
+                      disabled={isDownloading}
+                      title="Send to qBittorrent"
+                    >
+                      <Download className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        
+        {!activeSearch && !isLoading && !isError && (
+          <div className="h-64 flex flex-col items-center justify-center space-y-6 glass-panel rounded-2xl border-white/5 opacity-50">
+            <div className="relative">
+              <Search className="h-16 w-16 text-primary absolute opacity-50 blur-xl" />
+              <Search className="h-16 w-16 text-primary relative z-10" />
+            </div>
+            <p className="font-mono uppercase tracking-widest text-sm text-primary">Awaiting Query Input</p>
+          </div>
+        )}
       </div>
     </div>
   );

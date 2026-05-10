@@ -1,16 +1,35 @@
-import type { SearchResult } from "@/types";
-import { fetchApi } from "./api";
-
 export type NormalizedAnimeRelease = {
   raw: string;
   animeTitle: string;
-  episode?: number;
-  isBatch: boolean;
+  alternativeTitles: string[];
+
+  season?: number;
   releaseGroup?: string;
   resolution?: string;
   source?: string;
   codec?: string;
+  audio?: string;
+  subtitleLanguage?: string;
+  checksum?: string;
+  year?: number;
+
+  episode?: number;
+  episodeStart?: number;
+  episodeEnd?: number;
+
+  isBatch: boolean;
+  isMovie: boolean;
+  isOVA: boolean;
+  isONA: boolean;
+  isSpecial: boolean;
+  isNCOP: boolean;
+  isNCED: boolean;
+  isDualAudio: boolean;
+  isMultiSub: boolean;
+  isRemux: boolean;
+
   qualityScore: number;
+  confidence: number;
 };
 
 export type FineSearchQuery = {
@@ -59,18 +78,40 @@ export type AggregatedTorrent = {
   confidence: number;
   normalized: NormalizedAnimeRelease;
 };
-export async function searchAnime(query: string, category?: string): Promise<SearchResult[]> {
-  if (!query) return [];
-  const params = new URLSearchParams({ q: query });
-  if (category) {
-    params.append("category", category);
-  }
-  return fetchApi<SearchResult[]>(`/api/search?${params.toString()}`);
-}
 
-export async function fineSearchAnime(query: FineSearchQuery): Promise<FineSearchResult> {
-  return fetchApi<FineSearchResult>("/api/finesearch", {
-    method: "POST",
-    body: JSON.stringify(query),
-  });
-}
+export type AnitomyResult = {
+  title?: string;
+  type?: string;
+  season?: string;
+  year?: string;
+  language?: string;
+  subtitles?: string;
+  source?: string;
+  episode?: {
+    number?: number | string;
+    numberAlt?: number | string;
+    title?: string;
+  };
+  volume?: {
+    number?: number | string;
+  };
+  video?: {
+    term?: string;
+    resolution?: string;
+  };
+  audio?: {
+    term?: string;
+  };
+  release?: {
+    version?: string;
+    group?: string;
+  };
+  file?: {
+    name?: string;
+    extension?: string;
+    checksum?: string;
+  };
+  raw?: string;
+  alternative_titles?: string[];
+  [key: string]: any;
+};

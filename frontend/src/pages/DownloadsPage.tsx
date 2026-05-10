@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Play, Pause, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toaster";
@@ -61,130 +60,119 @@ export function DownloadsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight">Downloads</h1>
-        <p className="text-muted-foreground">Manage active torrents in qBittorrent.</p>
+      <div className="flex flex-col space-y-2 mb-8">
+        <h1 className="text-5xl md:text-7xl font-syne font-black tracking-tighter text-glow-magenta">DOWNLOADS</h1>
+        <p className="text-muted-foreground font-mono uppercase tracking-widest text-sm">Terminal // Active Links</p>
       </div>
 
-      <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="w-[40%]">Name</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Progress</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Speed</TableHead>
-              <TableHead className="text-center w-[120px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                  Loading torrents...
-                </TableCell>
-              </TableRow>
-            ) : isError ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-destructive">
-                  <div className="flex items-center justify-center space-x-2">
-                    <AlertCircle className="h-5 w-5" />
-                    <span>Failed to connect to qBittorrent. Check settings.</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : torrents?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                  No active downloads.
-                </TableCell>
-              </TableRow>
-            ) : (
-              torrents?.map((torrent) => {
-                const parsed = new AnimeReleaseParser(torrent.name).parse()
-                const displayTitle = parsed.animeTitle || torrent.name
+      <div className="flex flex-col space-y-4 mt-8">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-32 rounded-2xl glass-panel animate-pulse bg-white/5 border-white/10" />
+          ))
+        ) : isError ? (
+          <div className="h-48 flex flex-col items-center justify-center space-y-4 text-destructive glass-panel rounded-2xl border-dashed border-destructive/20 bg-destructive/5">
+            <AlertCircle className="h-10 w-10 opacity-80" />
+            <p className="font-mono text-lg uppercase tracking-widest text-destructive/80">CONNECTION SEVERED</p>
+          </div>
+        ) : torrents?.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-muted-foreground glass-panel rounded-2xl border-dashed border-white/20">
+            <p className="font-mono text-lg uppercase tracking-widest text-primary/50">NO ACTIVE TRANSMISSIONS</p>
+          </div>
+        ) : (
+          torrents?.map((torrent, i) => {
+            const parsed = new AnimeReleaseParser(torrent.name).parse()
+            const displayTitle = parsed.animeTitle || torrent.name
+            const progressPercent = (torrent.progress * 100).toFixed(1)
+            
+            return (
+              <div 
+                key={torrent.hash}
+                className="group relative flex flex-col md:flex-row glass-panel rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-glow-magenta hover:border-secondary/50"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                {/* Left Color Bar Accent based on state */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1 opacity-80 transition-colors ${
+                  torrent.state.includes("downloading") ? "bg-primary shadow-glow-cyan" :
+                  torrent.state.includes("paused") ? "bg-muted-foreground" :
+                  torrent.state.includes("error") ? "bg-destructive shadow-glow-magenta" :
+                  torrent.state.includes("up") ? "bg-green-400" : "bg-secondary"
+                }`} />
                 
-                return (
-                  <TableRow key={torrent.hash}>
-                    <TableCell className="font-medium">
-                      <div className="flex flex-col space-y-1">
-                        <span className="line-clamp-2 leading-tight" title={torrent.name}>
-                          {displayTitle}
-                        </span>
-                        <div className="flex flex-wrap gap-1.5 mt-0.5">
-                          {parsed.episode !== null && (
-                            <Badge variant="secondary" className="h-4 px-1 py-0 text-[9px]">
-                              Ep {parsed.episode}
-                            </Badge>
-                          )}
-                          {parsed.resolution && (
-                            <Badge variant="outline" className="h-4 px-1 py-0 text-[9px]">
-                              {parsed.resolution}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap">
-                      {formatBytes(torrent.size)}
-                    </TableCell>
-                  <TableCell className="w-[20%]">
-                    <div className="flex flex-col space-y-1.5">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{(torrent.progress * 100).toFixed(1)}%</span>
-                        {torrent.eta > 0 && torrent.progress < 1 && (
-                          <span>{formatETA(torrent.eta)}</span>
+                <div className="flex-1 p-6 flex flex-col justify-between">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <h3 className="font-syne font-bold text-xl leading-tight line-clamp-1 text-white" title={torrent.name}>
+                        {displayTitle}
+                      </h3>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge variant={
+                          torrent.state.includes("downloading") ? "default" :
+                          torrent.state.includes("paused") ? "outline" :
+                          torrent.state.includes("error") ? "destructive" :
+                          torrent.state.includes("up") ? "success" : "secondary"
+                        } className="capitalize py-0.5 shadow-none text-xs">
+                          {torrent.state.replace(/([A-Z])/g, ' $1').trim()}
+                        </Badge>
+                        
+                        {parsed.episode !== null && (
+                          <Badge variant="outline" className="border-white/10 text-white/70 py-0.5 text-xs">
+                            EP {parsed.episode}
+                          </Badge>
                         )}
+                        {parsed.resolution && (
+                          <Badge variant="outline" className="border-white/10 text-white/70 py-0.5 text-xs">
+                            {parsed.resolution}
+                          </Badge>
+                        )}
+                        <span className="text-xs font-mono text-muted-foreground self-center ml-2">{formatBytes(torrent.size)}</span>
                       </div>
-                      <Progress value={torrent.progress * 100} className="h-1.5" />
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      torrent.state.includes("downloading") ? "default" :
-                      torrent.state.includes("paused") ? "secondary" :
-                      torrent.state.includes("error") ? "destructive" :
-                      torrent.state.includes("up") ? "success" : "outline"
-                    } className="capitalize">
-                      {torrent.state.replace(/([A-Z])/g, ' $1').trim()}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right whitespace-nowrap">
-                    <div className="flex flex-col text-xs space-y-0.5">
-                      {torrent.downloadSpeed > 0 && (
-                        <span className="text-green-400 font-medium">↓ {formatBytes(torrent.downloadSpeed)}/s</span>
-                      )}
-                      {torrent.uploadSpeed > 0 && (
-                        <span className="text-blue-400 font-medium">↑ {formatBytes(torrent.uploadSpeed)}/s</span>
-                      )}
-                      {torrent.downloadSpeed === 0 && torrent.uploadSpeed === 0 && (
-                        <span className="text-muted-foreground">-</span>
+                  </div>
+                  
+                  <div className="mt-6 flex flex-col space-y-2">
+                    <div className="flex justify-between text-sm font-mono font-bold">
+                      <span className="text-white">{progressPercent}%</span>
+                      {torrent.eta > 0 && torrent.progress < 1 && (
+                        <span className="text-primary tracking-widest">{formatETA(torrent.eta)} REMAINING</span>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-center space-x-1">
-                      {torrent.state.includes("paused") ? (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => resumeMutation.mutate(torrent.hash)}>
-                          <Play className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => pauseMutation.mutate(torrent.hash)}>
-                          <Pause className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/20 hover:text-destructive" onClick={() => deleteMutation.mutate(torrent.hash)}>
-                        <Trash2 className="h-4 w-4" />
+                    <Progress value={torrent.progress * 100} className={`h-2 ${torrent.state.includes('paused') ? 'opacity-50' : ''}`} />
+                  </div>
+                </div>
+
+                <div className="bg-black/40 md:w-64 p-6 flex flex-row md:flex-col justify-between items-center md:items-end border-t md:border-t-0 md:border-l border-white/10">
+                  <div className="flex flex-row md:flex-col gap-4 md:gap-1 text-sm font-mono items-center md:items-end">
+                    {torrent.downloadSpeed > 0 && (
+                      <span className="text-primary font-bold tracking-tight">↓ {formatBytes(torrent.downloadSpeed)}/s</span>
+                    )}
+                    {torrent.uploadSpeed > 0 && (
+                      <span className="text-green-400 font-bold tracking-tight">↑ {formatBytes(torrent.uploadSpeed)}/s</span>
+                    )}
+                    {torrent.downloadSpeed === 0 && torrent.uploadSpeed === 0 && (
+                      <span className="text-muted-foreground tracking-widest">IDLE</span>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    {torrent.state.includes("paused") ? (
+                      <Button variant="secondary" size="icon" className="h-10 w-10 rounded-xl" onClick={() => resumeMutation.mutate(torrent.hash)}>
+                        <Play className="h-4 w-4" />
                       </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                    ) : (
+                      <Button variant="secondary" size="icon" className="h-10 w-10 rounded-xl" onClick={() => pauseMutation.mutate(torrent.hash)}>
+                        <Pause className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="destructive" size="icon" className="h-10 w-10 rounded-xl bg-destructive/20 text-destructive hover:bg-destructive hover:text-white" onClick={() => deleteMutation.mutate(torrent.hash)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        )}
       </div>
     </div>
   );

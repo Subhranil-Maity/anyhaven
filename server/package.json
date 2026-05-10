@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@elysiajs/cors": "latest",
+    "anitomy": "^0.0.35",
     "elysia": "latest",
     "fast-xml-parser": "^5.7.3"
   },

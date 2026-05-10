@@ -1,9 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, Download, History, Settings } from "lucide-react";
+import { Search, Download, History, Settings, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Search", href: "/", icon: Search },
+  { name: "Fine Search", href: "/finesearch", icon: Target },
   { name: "Downloads", href: "/downloads", icon: Download },
   { name: "History", href: "/history", icon: History },
   { name: "Settings", href: "/settings", icon: Settings },
@@ -16,8 +17,8 @@ export function Sidebar({ className }: { className?: string }) {
     <div className={cn("pb-12 w-64 border-r bg-card/50 hidden md:block", className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-primary">
-            AnyHaven
+          <h2 className="mb-2 px-4 text-2xl font-syne tracking-tight text-primary text-glow-cyan">
+            ANYHAVEN
           </h2>
           <div className="space-y-1">
             {navigation.map((item) => {
@@ -27,12 +28,17 @@ export function Sidebar({ className }: { className?: string }) {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                    isActive ? "bg-accent text-accent-foreground" : "transparent text-muted-foreground"
+                    "flex items-center rounded-xl px-3 py-3 text-sm font-bold transition-all duration-300 group",
+                    isActive 
+                      ? "bg-primary/10 text-primary border border-primary/30 shadow-glow-cyan" 
+                      : "transparent text-muted-foreground hover:bg-white/5 hover:text-white"
                   )}
                 >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.name}
+                  <item.icon className={cn(
+                    "mr-3 h-5 w-5 transition-transform duration-300 group-hover:scale-110",
+                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-white"
+                  )} />
+                  <span className="font-mono tracking-wider uppercase text-xs">{item.name}</span>
                 </Link>
               );
             })}
