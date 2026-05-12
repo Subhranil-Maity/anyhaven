@@ -6,6 +6,7 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
+    "@elysia/static": "^1.4.11",
     "@elysiajs/cors": "latest",
     "anitomy": "^0.0.35",
     "elysia": "latest",

@@ -1,0 +1,10 @@
+services:
+  anyhaven:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      - CONFIG_PATH=/data/settings.json
+    network_mode: host

@@ -4,11 +4,12 @@ import * as settingsService from "./services/settings.js";
 import * as qbitService from "./services/qbit.js";
 import * as nyaaService from "./services/nyaa.js";
 import { FineSearchEngine, FineSearchQuery } from "./parser/index.js";
+import { staticPlugin } from '@elysia/static'
 
 const handleFineSearch = async ({ query, body }: any) => {
   try {
     const input = Object.keys(query || {}).length > 0 ? query : (body || {});
-    
+
     const searchReq: FineSearchQuery = {
       animeTitle: input.animeTitle,
       season: input.season ? parseInt(input.season) : undefined,
@@ -26,21 +27,21 @@ const handleFineSearch = async ({ query, body }: any) => {
     };
 
     if (input.preferredGroups) {
-      searchReq.preferredGroups = Array.isArray(input.preferredGroups) 
-        ? input.preferredGroups 
+      searchReq.preferredGroups = Array.isArray(input.preferredGroups)
+        ? input.preferredGroups
         : input.preferredGroups.split(',').map((s: string) => s.trim());
     }
-    
+
     if (input.excludeGroups) {
-      searchReq.excludeGroups = Array.isArray(input.excludeGroups) 
-        ? input.excludeGroups 
+      searchReq.excludeGroups = Array.isArray(input.excludeGroups)
+        ? input.excludeGroups
         : input.excludeGroups.split(',').map((s: string) => s.trim());
     }
 
     if (!searchReq.animeTitle) {
       return { error: "Missing required field: animeTitle" };
     }
-    
+
     const results = await FineSearchEngine.search(searchReq);
     return results;
   } catch (error) {
@@ -186,6 +187,14 @@ const app = new Elysia()
       };
     }
   })
+  .use(
+    staticPlugin({
+      assets: "../frontend/dist/",
+      prefix: "/",
+      alwaysStatic: true
+    })
+  )
+  .get("/*", () => Bun.file("../frontend/dist/index.html"))
   .listen({
     port: 3000,
     hostname: "0.0.0.0",
@@ -194,3 +203,5 @@ const app = new Elysia()
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
+
+

@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+.env
+.settings.json
+.git
+.gitignore
+Dockerfile
+docker-compose.yml
+npm-debug.log
+bun.lock
