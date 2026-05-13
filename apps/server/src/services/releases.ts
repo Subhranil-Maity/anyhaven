@@ -1,4 +1,4 @@
-
+import { SearchResult } from "@repo/shared/types/releases"
 
 interface ReleasesSearchByIdIteam {
     alID: number,
@@ -45,17 +45,6 @@ interface ReleasesSearchByIdResult {
     items: ReleasesSearchByIdIteam[]
 }
 
-interface SearchResult {
-    dualAudio: boolean,
-    isBest: boolean,
-    releaseGroup: string,
-    url: string,
-    files: {
-        length: number,
-        name: string
-    }[],
-}
-
 async function searchByAniListId(id: number): Promise<SearchResult[]> {
     const result = await fetch(`https://releases.moe/api/collections/entries/records?filter=alID=${id}&expand=trs`)
     if (!result.ok) {
@@ -78,4 +67,4 @@ function getTorrentFile(res: SearchResult): String {
     const base = res.url.trim()
     return base.replace("nyaa.si/view/", "nyaa.si/download/") + ".torrent"
 }
-export { searchByAniListId, getTorrentFile, SearchResult }
+export { searchByAniListId, getTorrentFile }

@@ -1,19 +1,7 @@
+import { SearchNyaaResult } from "@repo/shared/types/nyaa";
 import { NyaaRSS, NyaaItem } from "../../nyaa/index.js";
 
-export interface SearchResult {
-  title: string;
-  link: string;
-  guid: string;
-  category?: string;
-  seeders: number;
-  leechers: number;
-  downloads: number;
-  size?: string;
-  trusted: boolean;
-  remake: boolean;
-  publishedAt?: string;
-  magnet?: string;
-}
+
 
 export async function searchAnime(
   query: string,
@@ -21,7 +9,7 @@ export async function searchAnime(
   filter?: "0" | "1" | "2",
   user?: string,
   limit?: number
-): Promise<SearchResult[]> {
+): Promise<SearchNyaaResult[]> {
   const nyaa = new NyaaRSS();
 
   const items = await nyaa.search({

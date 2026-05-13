@@ -1,3 +1,4 @@
+import { Anime } from "@repo/shared/types/anilist";
 import { Graffle } from "graffle";
 // TODO: Add cache for the anilist data
 const client = Graffle
@@ -6,28 +7,7 @@ const client = Graffle
         url: "https://graphql.anilist.co",
     });
 
-type Anime = {
-    id: number;
-    episodes?: number | null;
-    description?: string | null;
-    bannerImage?: string | null;
 
-    title: {
-        romaji: string;
-        english?: string | null;
-        native?: string | null;
-    };
-
-    coverImage: {
-        large?: string | null;
-        extraLarge?: string | null;
-    };
-
-    genres?: string[];
-
-    averageScore?: number | null;
-    status?: string | null;
-};
 
 async function searchAnime(search: string, page: number = 1, perPage: number = 10): Promise<Anime[] | null> {
     const data = await client.gql(`
@@ -94,5 +74,4 @@ async function getAnimeById(id: number): Promise<Anime | null> {
 export {
     searchAnime,
     getAnimeById,
-    Anime
 };

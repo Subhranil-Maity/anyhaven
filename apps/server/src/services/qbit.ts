@@ -1,15 +1,7 @@
+import { Torrent } from "@repo/shared/types/qbit";
 import { loadSettings } from "./settings.js";
 
-export interface Torrent {
-  hash: string;
-  name: string;
-  size: number;
-  progress: number;
-  state: string;
-  downloadSpeed: number;
-  uploadSpeed: number;
-  eta: number;
-}
+
 
 let authCookie: string | null = null;
 

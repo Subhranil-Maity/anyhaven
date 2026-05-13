@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "bun run --watch vite --port 3333",
-    "build": "bun run tsc -b && bun run vite build",
+    "dev": "bun run --watch vite --port 3333 --host 0.0.0.0",
+    "build": "bun run vite build",
+    "check-types": "bun run tsc --noEmit",
     "lint": "bun run eslint .",
     "preview": "bun run vite preview"
   },
