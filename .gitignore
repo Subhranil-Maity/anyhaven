@@ -48,3 +48,10 @@ coverage/
 !.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
+
+# settings files
+.settings.json
+
+# any data folders
+data/
+**/data/
