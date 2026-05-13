@@ -11,6 +11,7 @@ function App() {
     <Routes>
       <Route element={<AppShell />}>
         <Route path="/" element={<SearchPage />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/finesearch" element={<FineSearchPage />} />
         <Route path="/downloads" element={<DownloadsPage />} />
         <Route path="/history" element={<HistoryPage />} />

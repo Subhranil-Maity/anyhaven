@@ -49,6 +49,9 @@ coverage/
 !.yarn/sdks
 !.yarn/versions
 
+# Custom
+demo/
+
 # settings files
 .settings.json
 
