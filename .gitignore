@@ -55,6 +55,9 @@ demo/
 # settings files
 .settings.json
 
+# turbo
+.turbo/
+
 # any data folders
 data/
 **/data/

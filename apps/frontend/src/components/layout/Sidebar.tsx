@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Search", href: "/", icon: Search },
+  { name: "Raw Search", href: "/rawsearch", icon: Search },
   { name: "Fine Search", href: "/finesearch", icon: Target },
   { name: "Downloads", href: "/downloads", icon: Download },
   { name: "History", href: "/history", icon: History },
@@ -17,9 +18,7 @@ export function Sidebar({ className }: { className?: string }) {
     <div className={cn("pb-12 w-64 border-r bg-card/50 hidden md:block", className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-2xl font-syne tracking-tight text-primary text-glow-cyan">
-            ANYHAVEN
-          </h2>
+
           <div className="space-y-1">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
@@ -29,8 +28,8 @@ export function Sidebar({ className }: { className?: string }) {
                   to={item.href}
                   className={cn(
                     "flex items-center rounded-xl px-3 py-3 text-sm font-bold transition-all duration-300 group",
-                    isActive 
-                      ? "bg-primary/10 text-primary border border-primary/30 shadow-glow-cyan" 
+                    isActive
+                      ? "bg-primary/10 text-primary border border-primary/30 shadow-glow-cyan"
                       : "transparent text-muted-foreground hover:bg-white/5 hover:text-white"
                   )}
                 >

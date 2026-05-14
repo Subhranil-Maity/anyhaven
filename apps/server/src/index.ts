@@ -19,15 +19,17 @@ const app = new Elysia()
   .use(torrentsRoutes)
   .use(anilistSearchRoute)
   .use(anilistGetAnimeByIdRoute)
-  .use(releasesSearchByIdRoute)
-  .use(
+  .use(releasesSearchByIdRoute);
+if (process.env.NODE_ENV === "development") {
+  app.use(
     staticPlugin({
       assets: "../frontend/dist/",
       prefix: "/",
       alwaysStatic: true
     })
   )
-  .get("/*", () => Bun.file("../frontend/dist/index.html"));
+    .get("/*", () => Bun.file("../frontend/dist/index.html"));
+}
 
 app.listen({
   port: 3000,

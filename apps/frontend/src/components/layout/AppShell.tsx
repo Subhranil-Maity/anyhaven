@@ -19,16 +19,14 @@ export function AppShell() {
   return (
     <div className="flex min-h-screen flex-col bg-background bg-noise">
       <Header onMenuClick={() => setMobileMenuOpen(true)} />
-      
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        
         {/* Mobile menu */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
             <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
             <div className="fixed inset-y-0 left-0 w-64 bg-card shadow-lg p-6">
-              <button 
+              <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
               >

@@ -24,13 +24,16 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   });
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b border-primary/20 bg-background/40 px-6 glass-panel supports-[backdrop-filter]:bg-background/40">
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b border-primary/20 bg-background/40 px-6 glass-panel supports-backdrop-filter:bg-background/40">
+      <h2 className="text-2xl font-syne tracking-tight text-primary text-glow-cyan">
+        ANYHAVEN
+      </h2>
       <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>
         <Menu className="h-5 w-5" />
       </Button>
-      
+
       <div className="flex-1" />
-      
+
       <div className="flex items-center space-x-4">
         {qbitStatus !== undefined && (
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
