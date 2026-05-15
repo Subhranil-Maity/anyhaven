@@ -3,15 +3,27 @@ import { Button } from "@/components/ui/button";
 import { anilistGetAnimeById } from "@/services/anilist";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, PlayCircle, Star, Info } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { releasesSearchById } from "@/services/releases";
+import type { Anime } from "@repo/shared/types/anilist";
+import { Downloadable } from "@/components/ui/releases/downloads";
 
 export function AnimeDetailsPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    
+    const location = useLocation();
+    const cachedAnime = location.state?.anime as Anime | null;
     const { data: anime, isLoading, isError } = useQuery({
         queryKey: ["anime", id],
-        queryFn: () => anilistGetAnimeById(id!),
+        queryFn: async () => {
+            if (cachedAnime) return cachedAnime;
+            return await anilistGetAnimeById(id!)
+        },
+        enabled: !!id
+    });
+    const releasesQuery = useQuery({
+        queryKey: ["releases", id],
+        queryFn: async () => await releasesSearchById(id!),
         enabled: !!id
     });
 
@@ -49,9 +61,9 @@ export function AnimeDetailsPage() {
             {/* Banner Section */}
             <div className="absolute -top-4 -left-4 -right-4 md:-top-8 md:-left-8 md:-right-8 h-[600px] overflow-hidden pointer-events-none">
                 {anime.bannerImage ? (
-                    <img 
-                        src={anime.bannerImage} 
-                        alt="Banner" 
+                    <img
+                        src={anime.bannerImage}
+                        alt="Banner"
                         className="w-full h-full object-cover opacity-60"
                     />
                 ) : (
@@ -62,8 +74,8 @@ export function AnimeDetailsPage() {
             </div>
 
             <div className="container mx-auto px-4 pt-8 relative z-10">
-                <Button 
-                    variant="ghost" 
+                <Button
+                    variant="ghost"
                     className="mb-8 hover:bg-white/5 text-muted-foreground hover:text-white transition-all group"
                     onClick={() => navigate(-1)}
                 >
@@ -75,8 +87,8 @@ export function AnimeDetailsPage() {
                     {/* Sidebar / Poster */}
                     <div className="w-full lg:w-80 shrink-0">
                         <div className="glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/50 border-white/10 group">
-                            <img 
-                                src={anime.coverImage.extraLarge || anime.coverImage.large || ""} 
+                            <img
+                                src={anime.coverImage.extraLarge || anime.coverImage.large || ""}
                                 alt={anime.title.romaji}
                                 className="w-full aspect-2/3 object-cover transition-transform duration-700 group-hover:scale-105"
                             />
@@ -133,9 +145,9 @@ export function AnimeDetailsPage() {
 
                             <div className="flex flex-wrap gap-2 pt-2">
                                 {anime.genres?.map((genre) => (
-                                    <Badge 
-                                        key={genre} 
-                                        variant="secondary" 
+                                    <Badge
+                                        key={genre}
+                                        variant="secondary"
                                         className="bg-primary/10 text-primary border-primary/20 px-4 py-1 text-xs font-bold rounded-full hover:bg-primary/20 transition-colors"
                                     >
                                         {genre}
@@ -149,7 +161,7 @@ export function AnimeDetailsPage() {
                                 <Info className="w-4 h-4" />
                                 Synopsis
                             </h3>
-                            <div 
+                            <div
                                 className="text-lg leading-relaxed text-muted-foreground font-inter description-container prose prose-invert max-w-none"
                                 dangerouslySetInnerHTML={{ __html: anime.description || 'No description available.' }}
                             />
@@ -163,6 +175,9 @@ export function AnimeDetailsPage() {
                             <Button variant="outline" className="h-14 px-8 rounded-2xl border-white/10 bg-white/5 font-black uppercase tracking-widest hover:bg-white/10 transition-all">
                                 Add to Library
                             </Button>
+                        </div>
+                        <div className="mt-8">
+                            <Downloadable releases={releasesQuery.data || []} />
                         </div>
                     </div>
                 </div>

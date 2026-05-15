@@ -1,4 +1,4 @@
-interface SearchResult {
+interface ReleasesSearchResult {
     dualAudio: boolean,
     isBest: boolean,
     releaseGroup: string,
@@ -10,5 +10,5 @@ interface SearchResult {
 }
 
 export {
-    SearchResult
+    ReleasesSearchResult 
 }

@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Search, Star } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const temp: Anime = {
     "id": 21,
@@ -42,7 +43,7 @@ function AnimeCard({ anime, index }: { anime: Anime; index: number }) {
         : cleanDescription;
     const navigate = useNavigate();
     const handleAnimeClick = () => {
-        navigate(`/details/${anime.id}`);
+        navigate(`/details/${anime.id}`, { state: { anime } });
     }
 
     return (
@@ -55,7 +56,7 @@ function AnimeCard({ anime, index }: { anime: Anime; index: number }) {
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-primary to-secondary opacity-50 group-hover:opacity-100" />
 
             <div className="relative h-48 sm:h-auto sm:w-48 shrink-0 overflow-hidden">
-                <img
+                <motion.img
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     src={anime.coverImage.large}
                     alt={anime.title.romaji}
