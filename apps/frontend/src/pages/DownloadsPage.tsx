@@ -131,15 +131,47 @@ export function DownloadsPage() {
                     </div>
                   </div>
                   
-                  <div className="mt-6 flex flex-col space-y-2">
-                    <div className="flex justify-between text-sm font-mono font-bold">
-                      <span className="text-white">{progressPercent}%</span>
-                      {torrent.eta > 0 && torrent.progress < 1 && (
-                        <span className="text-primary tracking-widest">{formatETA(torrent.eta)} REMAINING</span>
-                      )}
+                  <div className="mt-6 flex flex-col space-y-4">
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex justify-between text-sm font-mono font-bold">
+                        <span className="text-white">GLOBAL PROGRESS: {progressPercent}%</span>
+                        {torrent.eta > 0 && torrent.progress < 1 && (
+                          <span className="text-primary tracking-widest">{formatETA(torrent.eta)} REMAINING</span>
+                        )}
+                      </div>
+                      <Progress value={torrent.progress * 100} className={`h-2 ${isPaused ? 'opacity-50' : ''}`} />
                     </div>
-                    <Progress value={torrent.progress * 100} className={`h-2 ${isPaused ? 'opacity-50' : ''}`} />
+
+                    {torrent.files && torrent.files.length > 0 && (
+                      <div className="space-y-3 pt-2 border-t border-white/5">
+                        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">Active Files</p>
+                        <div className="grid grid-cols-1 gap-3">
+                          {torrent.files.map((file) => (
+                            <div key={file.index} className="flex flex-col space-y-1.5 group/file">
+                              <div className="flex justify-between items-center text-[11px] font-mono">
+                                <span className="text-white/70 line-clamp-1 flex-1 pr-4 group-hover/file:text-primary transition-colors" title={file.name}>
+                                  {file.name.split(/[\\/]/).pop()}
+                                </span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-muted-foreground/50">{formatBytes(file.size)}</span>
+                                  <span className={file.progress === 1 ? "text-green-400" : "text-primary"}>
+                                    {(file.progress * 100).toFixed(1)}%
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full transition-all duration-500 ${file.progress === 1 ? "bg-green-400/50" : "bg-primary/40"}`}
+                                  style={{ width: `${file.progress * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
+
                 </div>
 
                 <div className="bg-black/40 md:w-64 p-6 flex flex-row md:flex-col justify-between items-center md:items-end border-t md:border-t-0 md:border-l border-white/10">

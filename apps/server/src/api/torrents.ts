@@ -4,7 +4,7 @@ import * as qbitService from "../services/qbit.js";
 const torrentsRoutes = new Elysia({ prefix: "/api/torrents" });
 torrentsRoutes.get("/", async () => {
   try {
-    const torrents = await qbitService.getTorrents();
+    const torrents = await qbitService.getTorrents(true);
     return torrents;
   } catch (error) {
     return {

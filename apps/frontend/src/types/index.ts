@@ -13,16 +13,9 @@ export interface SearchResult {
   magnet?: string;
 }
 
-export interface Torrent {
-  hash: string;
-  name: string;
-  size: number;
-  progress: number;
-  downloadSpeed: number;
-  uploadSpeed: number;
-  eta: number;
-  state: string;
-}
+export type { Torrent, TorrentFile } from "@repo/shared/types/qbit";
+
+
 
 export interface Settings {
   qbitUrl: string;

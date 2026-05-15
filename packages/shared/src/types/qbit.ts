@@ -1,3 +1,11 @@
+export interface TorrentFile {
+  index: number;
+  name: string;
+  size: number;
+  progress: number;
+  priority: number;
+}
+
 export interface Torrent {
   hash: string;
   name: string;
@@ -7,4 +15,5 @@ export interface Torrent {
   downloadSpeed: number;
   uploadSpeed: number;
   eta: number;
+  files?: TorrentFile[];
 }
