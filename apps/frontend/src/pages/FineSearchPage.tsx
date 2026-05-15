@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toaster";
 import { fineSearchAnime, type FineSearchQuery } from "@/services/search";
-import { addMagnet } from "@/services/torrents";
+import { addTorrent } from "@/services/torrents";
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (!+bytes) return '0 Bytes'
@@ -70,7 +70,7 @@ export function FineSearchPage() {
   });
 
   const { mutate: downloadMagnet } = useMutation({
-    mutationFn: addMagnet,
+    mutationFn: addTorrent,
     onSuccess: () => {
       toast({ title: "Download Started", description: "Torrent sent to qBittorrent successfully.", variant: "success" });
     },
@@ -107,7 +107,7 @@ export function FineSearchPage() {
       </div>
 
       <form onSubmit={handleSearch} className="flex flex-col space-y-6 p-6 md:p-8 glass-panel rounded-3xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-br from-secondary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
         
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Main Title Input - Full Width */}

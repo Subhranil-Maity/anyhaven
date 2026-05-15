@@ -113,20 +113,261 @@ export async function getTorrents(): Promise<Torrent[]> {
   }
 }
 
-export async function addMagnet(magnet: string): Promise<void> {
-  try {
+/** Converts a nyaa.si view URL to its direct .torrent download URL. */
+function toTorrentDownloadUrl(url: string): string {
+  // Already a direct download link (ends with .torrent or is a magnet)
+  if (url.startsWith("magnet:") || url.endsWith(".torrent")) return url;
+  // nyaa.si/view/XXXXXX  →  nyaa.si/download/XXXXXX.torrent
+  return url.replace("nyaa.si/view/", "nyaa.si/download/") + ".torrent";
+}
+
+export async function addTorrent(url: string): Promise<void> {
+  const settings = await loadSettings();
+  if (!settings) throw new Error("Settings not configured");
+
+  if (!authCookie) await authenticate();
+
+  if (url.startsWith("magnet:")) {
+    // Magnet link — pass directly via URL-encoded form.
     const res = await request("/api/v2/torrents/add", {
       method: "POST",
-      body: new URLSearchParams({
-        urls: magnet,
-      }),
+      body: new URLSearchParams({ urls: url, category: "anyhaven" }),
     });
+    if (!res.ok) throw new Error(`Failed to add magnet: ${res.status}`);
+    return;
+  }
 
-    if (!res.ok) throw new Error(`Failed to add torrent: ${res.status}`);
-  } catch (error) {
-    throw error;
+  // .torrent file — fetch the binary on our server, then upload as multipart.
+  // This is more reliable than having qBit reach out to nyaa.si directly.
+  const torrentUrl = toTorrentDownloadUrl(url);
+  console.log(`[qbit] Fetching torrent file from: ${torrentUrl}`);
+
+  const torrentRes = await fetch(torrentUrl, {
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; anyhaven/1.0)" },
+  });
+  if (!torrentRes.ok) {
+    throw new Error(`Failed to fetch .torrent file (${torrentRes.status}): ${torrentUrl}`);
+  }
+
+  const torrentBuffer = await torrentRes.arrayBuffer();
+  const form = new FormData();
+  form.append(
+    "torrents",
+    new Blob([torrentBuffer], { type: "application/x-bittorrent" }),
+    "download.torrent"
+  );
+  form.append("category", "anyhaven");
+
+  const res = await fetch(`${settings.qbitUrl}/api/v2/torrents/add`, {
+    method: "POST",
+    headers: { Cookie: authCookie! },
+    body: form,
+  });
+
+  if (res.status === 403) {
+    // Re-authenticate and retry once.
+    authCookie = null;
+    await authenticate();
+    const retry = await fetch(`${settings.qbitUrl}/api/v2/torrents/add`, {
+      method: "POST",
+      headers: { Cookie: authCookie! },
+      body: form,
+    });
+    if (!retry.ok) throw new Error(`Failed to add torrent after re-auth: ${retry.status}`);
+    return;
+  }
+
+  if (!res.ok) throw new Error(`Failed to add torrent: ${res.status}`);
+}
+
+export async function addMagnet(magnet: string): Promise<void> {
+  return addTorrent(magnet);
+}
+
+
+// ─── File-level management ──────────────────────────────────────────────────
+
+/** Returns the list of files inside a torrent with their 0-based indices. */
+export async function getTorrentFiles(hash: string): Promise<
+  Array<{ index: number; name: string; size: number; priority: number }>
+> {
+  const res = await request(`/api/v2/torrents/files?hash=${hash}`);
+  if (!res.ok) throw new Error(`Failed to get torrent files: ${res.status}`);
+  const files = await res.json();
+  return files.map((f: any, index: number) => ({
+    index,
+    name: f.name as string,
+    size: f.size as number,
+    priority: f.priority as number,
+  }));
+}
+
+/** Sets the download priority of specific file indices within a torrent.
+ *  priority 0 = skip, 1 = normal, 6 = high, 7 = maximum */
+export async function setFilePriority(
+  hash: string,
+  fileIndices: number[],
+  priority: number
+): Promise<void> {
+  const res = await request("/api/v2/torrents/filePrio", {
+    method: "POST",
+    body: new URLSearchParams({
+      hash,
+      id: fileIndices.join("|"),
+      priority: String(priority),
+    }),
+  });
+  if (!res.ok) throw new Error(`Failed to set file priority: ${res.status}`);
+}
+
+/** Strips directory prefix from a torrent file path so we can compare bare names. */
+function baseName(filePath: string): string {
+  return filePath.split(/[\\/]/).pop() ?? filePath;
+}
+
+/**
+ * Adds a torrent and selects ONLY the specified file for download.
+ * If a torrent from the same release is already tracked in qBittorrent (identified
+ * by matching the set of known release file names against an existing torrent's
+ * file list) it skips adding and just enables the requested file inside that torrent.
+ *
+ * @param torrentUrl    URL of the .torrent file or magnet link
+ * @param targetFile    The bare file name the user clicked (must match one entry in releaseFiles)
+ * @param releaseFiles  All bare file names that belong to this release (used for torrent matching)
+ */
+export async function addTorrentWithFileSelection(
+  torrentUrl: string,
+  targetFile: string,
+  releaseFiles: string[],
+  infoHash?: string
+): Promise<void> {
+  // ── 1. Check if the release torrent is already in qBittorrent ──────────────
+  const existingTorrents = await getTorrents();
+
+  // Fast path: if we have the infoHash, check directly (O(1) lookup).
+  if (infoHash) {
+    const normalizedHash = infoHash.toLowerCase();
+    const existing = existingTorrents.find(
+      (t) => t.hash.toLowerCase() === normalizedHash
+    );
+    if (existing) {
+      console.log(`[qbit] Torrent ${normalizedHash} already exists, selecting file.`);
+      const qFiles = await getTorrentFiles(existing.hash);
+      const targetQFile = qFiles.find((f) => {
+        const bn = baseName(f.name);
+        return bn === targetFile || bn.includes(targetFile) || targetFile.includes(bn);
+      });
+      if (targetQFile) {
+        await setFilePriority(existing.hash, [targetQFile.index], 1);
+        console.log(`[qbit] Enabled "${targetFile}" in existing torrent ${existing.hash}`);
+        return;
+      }
+    }
+  }
+
+  // Slow path: probe all existing torrents concurrently by file name matching.
+  const probeResults = await Promise.allSettled(
+    existingTorrents.map(async (torrent) => {
+      const qFiles = await getTorrentFiles(torrent.hash);
+      return { torrent, qFiles };
+    })
+  );
+
+  for (const result of probeResults) {
+    if (result.status !== "fulfilled") continue;
+    const { torrent, qFiles } = result.value;
+    const qBaseNames = qFiles.map((f) => baseName(f.name));
+
+    // Consider it a match when ≥ 1 release file name is present in the torrent.
+    const isMatch = releaseFiles.some((rf) =>
+      qBaseNames.some(
+        (qf) => qf === rf || qf.includes(rf) || rf.includes(qf)
+      )
+    );
+
+    if (isMatch) {
+      // Found it – enable the target file in the existing torrent.
+      const targetQFile = qFiles.find((f) => {
+        const bn = baseName(f.name);
+        return (
+          bn === targetFile || bn.includes(targetFile) || targetFile.includes(bn)
+        );
+      });
+
+      if (targetQFile) {
+        await setFilePriority(torrent.hash, [targetQFile.index], 1);
+        console.log(
+          `[qbit] Enabled file "${targetFile}" in existing torrent ${torrent.hash}`
+        );
+        return;
+      }
+    }
+  }
+
+  // ── 2. Torrent not found – add it fresh ────────────────────────────────────
+
+  const knownHashes = new Set(existingTorrents.map((t) => t.hash));
+  await addTorrent(torrentUrl);
+
+  // Poll for up to 30 s waiting for qBit to register the new torrent.
+  let newHash: string | null = null;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const current = await getTorrents();
+    const newTorrent = current.find((t) => !knownHashes.has(t.hash));
+    if (newTorrent) {
+      newHash = newTorrent.hash;
+      break;
+    }
+  }
+
+  if (!newHash) {
+    throw new Error("Torrent was sent but could not be found in qBittorrent after 30s.");
+  }
+
+  // Give qBit a couple of seconds to populate the file list.
+  await new Promise((r) => setTimeout(r, 2000));
+
+  const qFiles = await getTorrentFiles(newHash);
+
+  if (qFiles.length === 0) {
+    // No file data yet (e.g. magnet still resolving metadata) – bail gracefully.
+    console.warn("[qbit] No files found yet for new torrent; skipping file selection.");
+    return;
+  }
+
+  // Deselect everything first.
+  await setFilePriority(
+    newHash,
+    qFiles.map((f) => f.index),
+    0
+  );
+
+  // Now enable only the target file.
+  const targetQFile = qFiles.find((f) => {
+    const bn = baseName(f.name);
+    return (
+      bn === targetFile || bn.includes(targetFile) || targetFile.includes(bn)
+    );
+  });
+
+  if (targetQFile) {
+    await setFilePriority(newHash, [targetQFile.index], 1);
+    console.log(`[qbit] Selected file "${targetFile}" in new torrent ${newHash}`);
+  } else {
+    // Fallback: enable all so the download isn't stuck.
+    await setFilePriority(
+      newHash,
+      qFiles.map((f) => f.index),
+      1
+    );
+    console.warn(
+      `[qbit] Could not locate "${targetFile}" in torrent; enabled all files as fallback.`
+    );
   }
 }
+
+// ────────────────────────────────────────────────────────────────────────────
 
 export async function pauseTorrent(hash: string): Promise<void> {
   try {

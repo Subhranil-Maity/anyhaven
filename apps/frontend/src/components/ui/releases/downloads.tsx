@@ -2,6 +2,10 @@ import type { ReleasesSearchResult } from "@repo/shared/types/releases"
 import { Download, FileText, HardDrive, ShieldCheck, Zap, Search, ChevronRight, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useMemo } from "react"
+import { useMutation } from "@tanstack/react-query"
+import { addTorrentFile } from "@/services/torrents"
+import { useToast } from "@/components/ui/toaster"
+import { Loader2 } from "lucide-react"
 
 /**
  * Formats bytes into a human-readable string (e.g., 1.2 GB)
@@ -21,12 +25,36 @@ const formatBytes = (bytes: number, decimals = 2) => {
 const FileItem = ({ 
     file, 
     downloadUrl, 
-    isDualAudio 
+    isDualAudio,
+    releaseFiles,
+    infoHash
 }: { 
     file: { name: string, length: number }, 
     downloadUrl: string,
-    isDualAudio?: boolean
+    isDualAudio?: boolean,
+    /** All bare file names belonging to this release (for torrent matching on the backend) */
+    releaseFiles: string[],
+    infoHash?: string
 }) => {
+    const { toast } = useToast()
+    const mutation = useMutation({
+        mutationFn: () => addTorrentFile(downloadUrl, file.name, releaseFiles, infoHash),
+        onSuccess: () => {
+            toast({
+                title: "File Queued",
+                description: `"${file.name}" has been selected for download.`,
+                variant: "success"
+            })
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Transmission Failed",
+                description: error.message || "Failed to add torrent",
+                variant: "destructive"
+            })
+        }
+    })
+
     return (
         <motion.div 
             initial={{ opacity: 0, x: -10 }}
@@ -70,18 +98,30 @@ const FileItem = ({
                 </div>
             </div>
             
-            <a 
-                href={downloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-6 flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl transition-all shadow-xl shadow-indigo-600/10 active:scale-95 group-hover:shadow-indigo-600/30 whitespace-nowrap"
+            <button 
+                onClick={() => mutation.mutate()}
+                disabled={mutation.isPending || mutation.isSuccess}
+                className={`ml-6 flex items-center gap-2 px-5 py-2.5 text-white text-xs font-black rounded-xl transition-all shadow-xl active:scale-95 whitespace-nowrap disabled:cursor-not-allowed ${
+                    mutation.isSuccess
+                        ? "bg-green-600/80 shadow-green-600/10 opacity-80"
+                        : "bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 shadow-indigo-600/10 group-hover:shadow-indigo-600/30"
+                }`}
             >
-                <Download size={16} />
-                <span>DOWNLOAD</span>
-            </a>
+                {mutation.isPending ? (
+                    <Loader2 size={16} className="animate-spin" />
+                ) : mutation.isSuccess ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                ) : (
+                    <Download size={16} />
+                )}
+                <span>
+                    {mutation.isPending ? "ADDING..." : mutation.isSuccess ? "QUEUED" : "DOWNLOAD"}
+                </span>
+            </button>
         </motion.div>
     )
 }
+
 
 
 /**
@@ -99,6 +139,9 @@ const ReleaseSection = ({
 
     // Calculate total size of this specific release
     const totalSize = release.files.reduce((acc, f) => acc + f.length, 0)
+    // All bare file names – sent to backend to identify the torrent in qBit
+    const releaseFileNames = release.files.map(f => f.name)
+    const infoHash = release.infoHash
 
     return (
         <div className="mb-4 last:mb-0">
@@ -162,6 +205,8 @@ const ReleaseSection = ({
                                         file={file} 
                                         downloadUrl={release.url} 
                                         isDualAudio={release.dualAudio}
+                                        releaseFiles={releaseFileNames}
+                                        infoHash={infoHash}
                                     />
                                 </div>
                             ))}

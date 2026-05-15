@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toaster";
 import { searchAnime } from "@/services/search";
-import { addMagnet } from "@/services/torrents";
+import { addTorrent } from "@/services/torrents";
 import { AnimeReleaseParser } from "@/lib/parser";
 
 export function RawSearchPage() {
@@ -26,7 +26,7 @@ export function RawSearchPage() {
   });
 
   const { mutate: downloadMagnet, isPending: isDownloading } = useMutation({
-    mutationFn: addMagnet,
+    mutationFn: addTorrent,
     onSuccess: () => {
       toast({
         title: "Download Started",

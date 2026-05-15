@@ -57,6 +57,7 @@ async function searchByAniListId(id: number): Promise<ReleasesSearchResult[]> {
             isBest: i.isBest,
             releaseGroup: i.releaseGroup,
             url: i.url,
+            infoHash: i.infoHash || undefined,
             files: i.files
         }
     })
