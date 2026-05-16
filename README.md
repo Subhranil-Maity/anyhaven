@@ -61,6 +61,12 @@ bun run build
 
 The repository includes a root `Dockerfile` and `docker-compose.yml`.
 
+Pull prebuilt image:
+
+```bash
+docker pull ghcr.io/subhranil-maity/anyhaven:latest
+```
+
 Build and start:
 
 ```bash
