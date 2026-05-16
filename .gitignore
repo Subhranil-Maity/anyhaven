@@ -62,4 +62,6 @@ demo/
 # any data folders
 data/
 **/data/
+config/
+**/config/
 .codex

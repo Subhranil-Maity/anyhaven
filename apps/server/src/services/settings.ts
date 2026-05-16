@@ -1,6 +1,6 @@
 import { mkdir, access } from "fs/promises";
 import { readFile, writeFile } from "fs/promises";
-import { join } from "path";
+import { dirname, join } from "path";
 
 export interface Settings {
   qbitUrl: string;
@@ -20,7 +20,7 @@ async function fileExists(path: string): Promise<boolean> {
 }
 async function ensureSettingsFile() {
   if (!(await fileExists(SETTINGS_FILE))) {
-    await mkdir(join(SETTINGS_FILE, ".."), { recursive: true });
+    await mkdir(dirname(SETTINGS_FILE), { recursive: true });
     await writeFile(SETTINGS_FILE, JSON.stringify({ qbitUrl: "", username: "", password: "" }, null, 2));
   }
 }
@@ -36,7 +36,7 @@ export async function loadSettings(): Promise<Settings | null> {
 }
 
 export async function saveSettings(settings: Settings): Promise<void> {
-  await mkdir(process.cwd(), { recursive: true });
+  await mkdir(dirname(SETTINGS_FILE), { recursive: true });
   await writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2));
 }
 

@@ -27,6 +27,12 @@ ENV NODE_ENV=development
 COPY --from=build /app/apps/server/dist ./dist
 COPY --from=build /app/apps/frontend/dist ../frontend/dist
 
+# Pre-create writable config locations before dropping privileges.
+RUN mkdir -p /config /data && chown -R bun:bun /config /data
+
+# Ensure runtime writes files as a non-root user.
+USER bun
+
 EXPOSE 3000
 
 CMD ["bun", "dist/index.js"]
