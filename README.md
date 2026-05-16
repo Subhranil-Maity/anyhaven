@@ -1,75 +1,74 @@
 # AnyHaven
 
-A self-hosted anime torrent parser that searches Nyaa RSS feeds and sends magnets to qBittorrent.
-> This tool is a parsing and indexing utility for publicly available torrent listing metadata. It does not host, store, distribute, or link to any copyrighted content. All processed data is limited to publicly accessible information used solely for search, categorization, and display purposes.
----
+AnyHaven is a self-hosted anime torrent search + parser service that queries Nyaa RSS feeds and sends selected torrents to qBittorrent.
+
+> This project parses publicly available torrent listing metadata only. It does not host or distribute media content.
 
 ## Features
 
 - Search anime torrents via Nyaa RSS
-- Fine-grained filtering (resolution, codec, source, season/episode, groups, seeders)
-- Add torrents directly to qBittorrent
-- Monitor and manage active downloads (pause/resume/delete)
-- Minimal UI for personal use
+- Fine-grained filtering (resolution, source, codec, episodes, groups, seeders)
+- AniList search + details endpoints
+- Send magnet/torrent entries to qBittorrent
+- View and manage active torrents (pause, resume, delete)
 
----
+## Monorepo Layout
 
-## Stack
+```text
+apps/
+  frontend/   # React + Vite UI (port 3333 in dev)
+  server/     # Bun + Elysia API (port 3000)
+packages/
+  shared/     # Shared types used by frontend/server
+```
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 19, Vite, TailwindCSS 4, Radix UI |
-| Backend | Bun, Elysia |
-| Parser | fast-xml-parser, anitomy |
-| Downloads | qBittorrent WebUI API |
+## Requirements
 
----
+- Bun 1.3+
+- qBittorrent with WebUI enabled
 
-## Quick Start (Development)
+## Local Development
+
+Install workspace dependencies once from repo root:
 
 ```bash
-# Backend
-cd server && bun install && bun run dev
+bun install
+```
 
-# Frontend (separate terminal)
-cd frontend && bun install && bun run dev
+Run both apps with Turbo:
+
+```bash
+bun run dev
+```
+
+Or run each app directly:
+
+```bash
+bun run --cwd apps/server dev
+bun run --cwd apps/frontend dev
 ```
 
 - Frontend: http://localhost:3333
 - Backend API: http://localhost:3000
 
----
-
-## Docker / Production
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-- A running qBittorrent instance with WebUI enabled
-
-
-### Build and run
+## Build
 
 ```bash
-docker compose build 
+bun run build
 ```
-### Docker Compose 
-```yaml
-services:
-  anyhaven:
-    build: .
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./config/anyhaven:/config
-    environment:
-      - CONFIG_PATH=/config/settings.json
-    network_mode: host
-```
-> Note: Use `network_mode: host` if u wnat to connect to qbittorent container running in another docker network. if possible put it under same network as you qbittorent. If u have any better idea then feel free to contibute.
 
----
+## Docker
+
+The repository includes a root `Dockerfile` and `docker-compose.yml`.
+
+Build and start:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+Current compose file mounts `./data` and stores settings at `/data/settings.json` inside the container.
 
 ## API Endpoints
 
@@ -77,40 +76,43 @@ services:
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
 | GET | `/api/search?q=<query>` | Nyaa RSS search |
-| GET,POST | `/api/finesearch` | Advanced filtering search |
-| GET | `/api/settings` | Get qBit settings |
-| POST | `/api/settings` | Save qBit settings |
-| POST | `/api/settings/test` | Test qBit connection |
-| GET | `/api/torrents` | List active torrents |
+| GET, POST | `/api/finesearch` | Fine search parser endpoint |
+| GET | `/api/settings` | Get saved qBittorrent settings |
+| POST | `/api/settings` | Save qBittorrent settings |
+| POST | `/api/settings/test` | Test qBittorrent connection |
+| GET | `/api/torrents` | List torrents from qBittorrent |
 | POST | `/api/torrents/add` | Add magnet link |
+| POST | `/api/torrents/addtorrent` | Add torrent URL |
+| POST | `/api/torrents/addfile` | Queue file-level selection from a release |
 | POST | `/api/torrents/:hash/pause` | Pause torrent |
 | POST | `/api/torrents/:hash/resume` | Resume torrent |
-| DELETE | `/api/torrents/:hash` | Delete torrent |
+| DELETE | `/api/torrents/:hash` | Delete torrent (`deleteFiles` optional in body) |
+| GET | `/api/anilist/search?q=<query>` | AniList search |
+| GET | `/api/anilist/getAnimeById/:id` | AniList anime by id |
+| GET | `/api/releases/searchById/:id` | Search releases by AniList id |
 
-### Fine Search Parameters
+## Fine Search Parameters
 
+```text
+animeTitle           string   (required)
+season               number
+episode              number
+episodeStart         number
+episodeEnd           number
+isBatch              boolean
+preferredResolution  string   (e.g. 1080p, 720p)
+preferredSource      string   (e.g. BluRay, WEB)
+preferredCodec       string   (e.g. x265, x264)
+preferredGroups      string[] or comma-separated string
+excludeGroups        string[] or comma-separated string
+dualAudio            boolean
+minimumSeeders       number
+allowMultiSub        boolean
+category             string
 ```
-animeTitle      string   (required) - Title to search
-season          number   - Match specific season
-episode         number   - Match specific episode number
-episodeStart    number   - Range start
-episodeEnd      number   - Range end
-isBatch         boolean  - Prefer batch releases
-preferredResolution  string - e.g. "1080p", "720p"
-preferredSource  string  - e.g. "BluRay", "WEB"
-preferredCodec   string  - e.g. "x265", "x264"
-preferredGroups  string[] - Trust these release groups
-excludeGroups   string[] - Exclude these groups
-dualAudio       boolean  - Prefer dual audio releases
-minimumSeeders  number   - Minimum seeder count
-allowMultiSub   boolean  - Allow multi-sub releases
-category        string  - Nyaa category filter
-```
-
----
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CONFIG_PATH` | `./.settings.json` | Path to settings file |
+| `CONFIG_PATH` | `./.settings.json` (relative to `apps/server` working dir) | Path to qBittorrent settings file |

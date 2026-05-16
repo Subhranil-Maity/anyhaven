@@ -1,44 +1,32 @@
-# -------------------------
-# Stage 1: Frontend build
-# -------------------------
-FROM oven/bun:1 AS frontend-build
-
-WORKDIR /app/frontend
-
-COPY frontend/package.json frontend/bun.lock ./
-RUN bun install
-
-COPY frontend/ ./
-RUN bun run build
-
-
-# -------------------------
-# Stage 2: Backend deps
-# -------------------------
-FROM oven/bun:1 AS backend-deps
-
-WORKDIR /app/server
-
-COPY server/package.json server/bun.lock ./
-RUN bun install --frozen-lockfile
-
-
-# -------------------------
-# Stage 3: Runtime
-# -------------------------
-FROM oven/bun:1
+FROM oven/bun:1 AS deps
 
 WORKDIR /app
 
-# frontend build output
-COPY --from=frontend-build /app/frontend/dist ./frontend/dist
+# Install workspace dependencies first for better layer caching.
+COPY package.json bun.lock turbo.json ./
+COPY apps/server/package.json apps/server/package.json
+COPY apps/frontend/package.json apps/frontend/package.json
+COPY packages/shared/package.json packages/shared/package.json
+RUN bun install --frozen-lockfile
 
-# backend code + deps
-COPY server/ ./server/
-COPY --from=backend-deps /app/server/node_modules ./server/node_modules
+FROM deps AS build
 
-WORKDIR /app/server
+WORKDIR /app
+COPY . .
+RUN bun run --cwd apps/frontend build
+RUN bun run --cwd apps/server build
+
+FROM oven/bun:1-slim AS runtime
+
+WORKDIR /app/apps/server
+
+# Server enables static frontend serving when NODE_ENV=development.
+ENV NODE_ENV=development
+
+# Keep runtime image minimal: only built artifacts, no node_modules.
+COPY --from=build /app/apps/server/dist ./dist
+COPY --from=build /app/apps/frontend/dist ../frontend/dist
 
 EXPOSE 3000
 
-CMD ["bun", "run", "src/index.ts"]
+CMD ["bun", "dist/index.js"]

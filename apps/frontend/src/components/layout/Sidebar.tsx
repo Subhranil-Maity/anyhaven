@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, Download, History, Settings, Target } from "lucide-react";
+import { Search, Download, Settings, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -7,7 +7,6 @@ const navigation = [
   { name: "Raw Search", href: "/rawsearch", icon: Search },
   { name: "Fine Search", href: "/finesearch", icon: Target },
   { name: "Downloads", href: "/downloads", icon: Download },
-  { name: "History", href: "/history", icon: History },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

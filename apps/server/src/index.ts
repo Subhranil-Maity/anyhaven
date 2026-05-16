@@ -23,12 +23,12 @@ const app = new Elysia()
 if (process.env.NODE_ENV === "development") {
   app.use(
     staticPlugin({
-      assets: "../frontend/dist/",
+      assets: "../../apps/frontend/dist/",
       prefix: "/",
       alwaysStatic: true
     })
   )
-    .get("/*", () => Bun.file("../frontend/dist/index.html"));
+    .get("/*", () => Bun.file("../../apps/frontend/dist/index.html"));
 }
 
 app.listen({

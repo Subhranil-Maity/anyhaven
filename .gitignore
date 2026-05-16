@@ -57,7 +57,9 @@ demo/
 
 # turbo
 .turbo/
+.turbo
 
 # any data folders
 data/
 **/data/
+.codex

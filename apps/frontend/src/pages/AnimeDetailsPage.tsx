@@ -167,15 +167,6 @@ export function AnimeDetailsPage() {
                             />
                         </div>
 
-                        <div className="flex gap-4">
-                            <Button className="h-14 px-8 rounded-2xl bg-primary text-black font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-primary/20 group">
-                                <PlayCircle className="mr-3 h-6 w-6" />
-                                Start Watching
-                            </Button>
-                            <Button variant="outline" className="h-14 px-8 rounded-2xl border-white/10 bg-white/5 font-black uppercase tracking-widest hover:bg-white/10 transition-all">
-                                Add to Library
-                            </Button>
-                        </div>
                         <div className="mt-8">
                             <Downloadable releases={releasesQuery.data || []} />
                         </div>

@@ -2,13 +2,12 @@ import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Search, Download, History, Settings, X } from "lucide-react";
+import { Search, Download, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Search", href: "/", icon: Search },
   { name: "Downloads", href: "/downloads", icon: Download },
-  { name: "History", href: "/history", icon: History },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
