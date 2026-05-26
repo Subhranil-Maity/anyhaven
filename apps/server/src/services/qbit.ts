@@ -5,14 +5,21 @@ import { loadSettings } from "./settings.js";
 
 let authCookie: string | null = null;
 
+function baseUrl(url: string): string {
+  return url.replace(/\/+$/, "");
+}
+
 async function authenticate(): Promise<string> {
   const settings = await loadSettings();
   if (!settings) throw new Error("Settings not configured");
 
-  const res = await fetch(`${settings.qbitUrl}/api/v2/auth/login`, {
+  const url = baseUrl(settings.qbitUrl);
+
+  const res = await fetch(`${url}/api/v2/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
+      "Referer": url + "/",
     },
     body: new URLSearchParams({
       username: settings.username || "",
@@ -21,28 +28,43 @@ async function authenticate(): Promise<string> {
   });
 
   if (!res.ok) {
-    throw new Error("Failed to authenticate with qBittorrent");
+    throw new Error(`Failed to authenticate with qBittorrent (${res.status})`);
   }
 
-  const text = await res.text();
-  if (text !== "Ok.") {
-    throw new Error("Authentication failed: " + text);
+  if (res.status === 204) {
+    // qBittorrent ≥5.x returns 204 No Content on successful login
+    // without a body. Fall through to extract the cookie.
+  } else {
+    const text = await res.text();
+    if (text !== "Ok.") {
+      throw new Error(`Authentication failed (${res.status}): "${text}"`);
+    }
   }
 
-  let cookieHeader = res.headers.get("set-cookie");
-  if (!cookieHeader && typeof (res.headers as any).getSetCookie === "function") {
+  let cookieHeader: string | null = null;
+
+  // Bun / modern runtimes: Set-Cookie is forbidden from Headers.get(),
+  // must use the getSetCookie() accessor.
+  if (typeof (res.headers as any).getSetCookie === "function") {
     const cookies = (res.headers as any).getSetCookie();
     if (cookies && cookies.length > 0) {
       cookieHeader = cookies.join(";");
     }
   }
 
+  // Fallback for runtimes where getSetCookie() is not available.
+  if (!cookieHeader) {
+    cookieHeader = res.headers.get("set-cookie");
+  }
+
   if (cookieHeader) {
-    const match = cookieHeader.match(/SID=([^;]+)/);
+    // qBittorrent v4.x uses "SID=...", v5.x+ uses "QBT_SID_<port>=..."
+    const match = cookieHeader.match(/(QBT_SID_\d+|SID)=([^;]+)/);
     if (match) {
-      authCookie = `SID=${match[1]}`;
+      authCookie = `${match[1]}=${match[2]}`;
       return authCookie;
     }
+    console.warn(`[qbit] Set-Cookie header present but no session cookie found in: "${cookieHeader}"`);
   }
 
   throw new Error("Could not find session cookie in response");
@@ -52,26 +74,30 @@ async function request(endpoint: string, options: RequestInit = {}): Promise<Res
   const settings = await loadSettings();
   if (!settings) throw new Error("Settings not configured");
 
+  const url = baseUrl(settings.qbitUrl);
+
   if (!authCookie) {
     await authenticate();
   }
 
-  let res = await fetch(`${settings.qbitUrl}${endpoint}`, {
+  let res = await fetch(`${url}${endpoint}`, {
     ...options,
     headers: {
       ...options.headers,
       Cookie: authCookie!,
+      "Referer": url + "/",
     },
   });
 
   if (res.status === 403) {
     authCookie = null;
     await authenticate();
-    res = await fetch(`${settings.qbitUrl}${endpoint}`, {
+    res = await fetch(`${url}${endpoint}`, {
       ...options,
       headers: {
         ...options.headers,
         Cookie: authCookie!,
+        "Referer": url + "/",
       },
     });
   }
@@ -142,17 +168,19 @@ function toTorrentDownloadUrl(url: string): string {
   return url.replace("nyaa.si/view/", "nyaa.si/download/") + ".torrent";
 }
 
-export async function addTorrent(url: string): Promise<void> {
+export async function addTorrent(torrentUrl: string): Promise<void> {
   const settings = await loadSettings();
   if (!settings) throw new Error("Settings not configured");
 
+  const host = baseUrl(settings.qbitUrl);
+
   if (!authCookie) await authenticate();
 
-  if (url.startsWith("magnet:")) {
+  if (torrentUrl.startsWith("magnet:")) {
     // Magnet link — pass directly via URL-encoded form.
     const res = await request("/api/v2/torrents/add", {
       method: "POST",
-      body: new URLSearchParams({ urls: url, category: "anyhaven" }),
+      body: new URLSearchParams({ urls: torrentUrl, category: "anyhaven" }),
     });
     if (!res.ok) throw new Error(`Failed to add magnet: ${res.status}`);
     return;
@@ -160,14 +188,14 @@ export async function addTorrent(url: string): Promise<void> {
 
   // .torrent file — fetch the binary on our server, then upload as multipart.
   // This is more reliable than having qBit reach out to nyaa.si directly.
-  const torrentUrl = toTorrentDownloadUrl(url);
-  console.log(`[qbit] Fetching torrent file from: ${torrentUrl}`);
+  const dlUrl = toTorrentDownloadUrl(torrentUrl);
+  console.log(`[qbit] Fetching torrent file from: ${dlUrl}`);
 
-  const torrentRes = await fetch(torrentUrl, {
+  const torrentRes = await fetch(dlUrl, {
     headers: { "User-Agent": "Mozilla/5.0 (compatible; anyhaven/1.0)" },
   });
   if (!torrentRes.ok) {
-    throw new Error(`Failed to fetch .torrent file (${torrentRes.status}): ${torrentUrl}`);
+    throw new Error(`Failed to fetch .torrent file (${torrentRes.status}): ${dlUrl}`);
   }
 
   const torrentBuffer = await torrentRes.arrayBuffer();
@@ -179,19 +207,18 @@ export async function addTorrent(url: string): Promise<void> {
   );
   form.append("category", "anyhaven");
 
-  const res = await fetch(`${settings.qbitUrl}/api/v2/torrents/add`, {
+  const res = await fetch(`${host}/api/v2/torrents/add`, {
     method: "POST",
-    headers: { Cookie: authCookie! },
+    headers: { Cookie: authCookie!, Referer: host + "/" },
     body: form,
   });
 
   if (res.status === 403) {
-    // Re-authenticate and retry once.
     authCookie = null;
     await authenticate();
-    const retry = await fetch(`${settings.qbitUrl}/api/v2/torrents/add`, {
+    const retry = await fetch(`${host}/api/v2/torrents/add`, {
       method: "POST",
-      headers: { Cookie: authCookie! },
+      headers: { Cookie: authCookie!, Referer: host + "/" },
       body: form,
     });
     if (!retry.ok) throw new Error(`Failed to add torrent after re-auth: ${retry.status}`);
